@@ -143,19 +143,24 @@ b.  For fixed $\boldsymbol\beta$, differentiate the log-likelihood with respect 
     ##Solved the partial derivative by hand
     ##log(a * b) = log(a) + log(b)
     ##(logx)' = 1 / x
-    dl_dvar <- expression(-(n / (2 * var)) + (1 / (2 * pi * var ^ 2)) * t((y - X %*% beta)) %*% (y - X %*% beta))
+    dl_dvar <- expression(-(n / (2 * var)) + (1 / (2 * var ^ 2)) * t((y - X %*% beta)) %*% (y - X %*% beta))
 
     #Calculate the maximum-likelihood estimate by setting the dl_dvar to 0
     ##Solved for var by hand
     n <- 100
-    var <- expression((t((y - X %*% beta)) %*% (y - X %*% beta)) / (n * pi))
-    MLE <- (t((y - X %*% beta_hat)) %*% (y - X %*% beta_hat)) / (n * pi)
+    var <- expression((t((y - X %*% beta)) %*% (y - X %*% beta)) / n)
+    MLE <- (t((y - X %*% beta_hat)) %*% (y - X %*% beta_hat)) / n
     MLE
 
     #Calculate the unbiased estimate of the variance
+    ##var = RSS / (n - p)
+    ##RSS = residual sum of squares, p = # of estimators including intercept
+    p <- 6
+    unbiased_var <- (t((y - X %*% beta_hat)) %*% (y - X %*% beta_hat)) / (n - p)
+    unbiased_var
     ```
 
-    The maximum likelihood estimate at beta_hat is `r MLE`.
+    The maximum likelihood estimate at beta_hat is `r MLE` whereas the unbiased estimate of the variance is `r unbiased_var`. The maximum likelihood estimate is slightly lower than the unbiased estimate. The two denominators differ because the unbiased estimator accounts for the `p` degrees of freedom.
 
 c.  Let
 
@@ -169,6 +174,16 @@ $$\ell\left(
 \right)$$
 
 over a grid of $t$ values from $-1.25$ to $1.25$. State where the maximum occurs and explain why this agrees with the least-squares result.
+
+```{r}
+e_x2 <- c(0, 0, 1, 0, 0, 0)
+
+#Generate predictor and response values for scatterplot
+##Variance is constant (MLE = MLE_hat)
+t <- seq(from = -1.25, to = 1.25, length.out = 100)
+beta_hat2 <- beta_hat + t %*% t(e_x2)
+reponse_values <- -(n / 2) * log(2 * pi * MLE_hat) - (1 / (2* MLE_hat)) * (t((y - X %*% beta_hat2)) %*% (y - X %*% beta_hat2))
+```
 
 ## Question 3 (Starting values in nonconvex optimization)
 
