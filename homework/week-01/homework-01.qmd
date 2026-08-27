@@ -17,16 +17,13 @@ format:
 
 Set the random seed to 43201. Generate $n=100$ observations with $p=5$ predictors according to
 
-$$
-x_{ij}\overset{\mathrm{iid}}{\sim}N(0,1),
+$$x_{ij}\overset{\mathrm{iid}}{\sim}N(0,1),
 \qquad
-\varepsilon_i\overset{\mathrm{iid}}{\sim}N(0,0.7^2),
-$$
+\varepsilon_i\overset{\mathrm{iid}}{\sim}N(0,0.7^2),$$
 
 with all predictors and errors generated independently. Let
 
-$$
-\mathbf X
+$$\mathbf X
 =
 \begin{bmatrix}
 \mathbf 1 & \mathbf x_1 & \cdots & \mathbf x_5
@@ -34,68 +31,121 @@ $$
 \qquad
 \boldsymbol\beta
 =
-(3,1.4,-0.9,0.7,0,1.1)^{\mathsf T},
-$$
+(3,1.4,-0.9,0.7,0,1.1)^{\mathsf T},$$
 
 and generate
 
-$$
-\mathbf y=\mathbf X\boldsymbol\beta+\boldsymbol\varepsilon.
-$$
+$$\mathbf y=\mathbf X\boldsymbol\beta+\boldsymbol\varepsilon.$$
 
-a. Generate the data and report the dimensions and rank of $\mathbf X$. Calculate the least-squares estimate $\widehat{\boldsymbol\beta}$ using a numerically stable least-squares routine, without explicitly calculating $(\mathbf X^{\mathsf T}\mathbf X)^{-1}$. Compare the estimates with the coefficients used to generate the data.
+a.  Generate the data and report the dimensions and rank of $\mathbf X$. Calculate the least-squares estimate $\widehat{\boldsymbol\beta}$ using a numerically stable least-squares routine, without explicitly calculating $(\mathbf X^{\mathsf T}\mathbf X)^{-1}$. Compare the estimates with the coefficients used to generate the data.
 
-b. Calculate the fitted values, the residual vector $\mathbf r=\mathbf y-\mathbf X\widehat{\boldsymbol\beta}$, and the training root mean squared error
+    ```{r}
+    #Set random seed to 43201
+    set.seed(43201)
 
-$$
-\operatorname{RMSE}
+    #Generate a sample of 100 observations with 5 predictors using a normal distribution
+    x1 <- rnorm(n = 100, mean = 0, sd = 1)
+    x2 <- rnorm(n = 100, mean = 0, sd = 1)
+    x3 <- rnorm(n = 100, mean = 0, sd = 1)
+    x4 <- rnorm(n = 100, mean = 0, sd = 1)
+    x5 <- rnorm(n = 100, mean = 0, sd = 1)
+
+    #Generate a sample of errors for the predictors above
+    e <- rnorm(n = 100, mean = 0, sd = 0.7)
+
+    #Create X
+    predictors <- data.frame(x1 = x1, x2 = x2, x3 = x3, x4 = x4, x5 = x5)
+    X <- cbind(Intercept = 1, as.matrix(predictors))
+
+    #Create beta vector
+    beta <- c(3, 1.4, -0.9, 0.7, 0, 1.1)
+
+    #Generate y values and create new dataframe with y
+    #y <- 3 + (1.4 * predictors$x1) - (0.9 * predictors$x2) + (0.7 * predictors$x3) + (0 * predictors$x4) + (1.1 * predictors$x5) + e
+    y <- (X %*% beta) + e
+
+    data <- predictors
+    data <- cbind(data, y = y)
+
+    #Generate least squares regression model
+    model <- lm(y ~ x1 + x2 + x3 + x4 + x5, data = data)
+
+    #Find dimensions and rank of X
+    dim(X)
+    qr(X)$"rank"
+
+    #Calculate the least squares estimate, beta_hat
+    beta_hat <- coefficients(model)
+    beta_hat
+    ```
+
+    The dimensions of X has `r dim(X)[1]` rows and `r dim(X)[2]` columns. The rank of X is `r qr(X)$"rank"`. The estimates for the intercept, x1, x2, x3, and x5 are relatively close to the coefficients used to generate the data. However, the estimate for x4 should be closer to 0.
+
+b.  Calculate the fitted values, the residual vector $\mathbf r=\mathbf y-\mathbf X\widehat{\boldsymbol\beta}$, and the training root mean squared error
+
+$$\operatorname{RMSE}
 =
 \left(
 \frac{1}{n}\sum_{i=1}^{n}r_i^2
-\right)^{1/2}.
-$$
+\right)^{1/2}.$$
 
-c. Report $\lVert\mathbf X^{\mathsf T}\mathbf r\rVert_\infty$. Explain why this value should be close to zero and what it tells us about the residual vector.
+```{r}
+#Calculate fitted values
+##fitted() generates values for the original data
+##predicted() generates values for new data
+fitted_values <- fitted(model)
+
+#Calculate residual vector r = y - X * beta_hat
+residuals <- resid(model)
+
+#Calculate training root mean squared error
+training_RMSE <- ((1 / length(fitted_values)) * sum(residuals ^ 2)) ^ (1 / 2)
+training_RMSE
+```
+
+c.  Report $\lVert\mathbf X^{\mathsf T}\mathbf r\rVert_\infty$. Explain why this value should be close to zero and what it tells us about the residual vector.
+
+    ```{r}
+    #Report the largest value in the vector by
+    ##1. Calculate X^T * r
+    ##2. Apply the absolute value
+    ##3. Use the max() function to find the largest value
+    largest_value <- max(abs(t(X) %*% residuals))
+    ```
+
+    The maximum norm for the vector X^T^r is `r largest_value`. This value should be close to 0 because the least squares regression strives to minimize errors in its model. In addition, this value tells us that changing any intercepts or predictors would most likely not decrease the residuals.
 
 ## Question 2 (Gaussian likelihood for linear regression)
 
 Continue with the data from Question 1. Suppose
 
-$$
-\mathbf Y\mid\mathbf X
+$$\mathbf Y\mid\mathbf X
 \sim
-N_n\left(\mathbf X\boldsymbol\beta,\sigma^2\mathbf I_n\right).
-$$
+N_n\left(\mathbf X\boldsymbol\beta,\sigma^2\mathbf I_n\right).$$
 
 The log-likelihood, including the constant term, is
 
-$$
-\ell(\boldsymbol\beta,\sigma^2)
+$$\ell(\boldsymbol\beta,\sigma^2)
 =
 -\frac{n}{2}\log(2\pi\sigma^2)
 -\frac{1}{2\sigma^2}
 (\mathbf y-\mathbf X\boldsymbol\beta)^{\mathsf T}
-(\mathbf y-\mathbf X\boldsymbol\beta).
-$$
+(\mathbf y-\mathbf X\boldsymbol\beta).$$
 
-a. For fixed $\sigma^2$, explain why maximizing $\ell(\boldsymbol\beta,\sigma^2)$ over $\boldsymbol\beta$ is equivalent to minimizing the residual sum of squares. What does this imply about the maximum-likelihood estimate of $\boldsymbol\beta$?
+a.  For fixed $\sigma^2$, explain why maximizing $\ell(\boldsymbol\beta,\sigma^2)$ over $\boldsymbol\beta$ is equivalent to minimizing the residual sum of squares. What does this imply about the maximum-likelihood estimate of $\boldsymbol\beta$?
 
-b. For fixed $\boldsymbol\beta$, differentiate the log-likelihood with respect to $\sigma^2$ and derive its maximum-likelihood estimate. Calculate this estimate at $\widehat{\boldsymbol\beta}$ and compare it with the unbiased estimate of $\sigma^2$. Explain why the two denominators differ.
+b.  For fixed $\boldsymbol\beta$, differentiate the log-likelihood with respect to $\sigma^2$ and derive its maximum-likelihood estimate. Calculate this estimate at $\widehat{\boldsymbol\beta}$ and compare it with the unbiased estimate of $\sigma^2$. Explain why the two denominators differ.
 
-c. Let
+c.  Let
 
-$$
-\mathbf e_{x_2}=(0,0,1,0,0,0)^{\mathsf T}.
-$$
+$$\mathbf e_{x_2}=(0,0,1,0,0,0)^{\mathsf T}.$$
 
 Using the variance estimate from part b, plot
 
-$$
-\ell\left(
+$$\ell\left(
 \widehat{\boldsymbol\beta}+t\mathbf e_{x_2},
 \widehat{\sigma}_{\mathrm{MLE}}^2
-\right)
-$$
+\right)$$
 
 over a grid of $t$ values from $-1.25$ to $1.25$. State where the maximum occurs and explain why this agrees with the least-squares result.
 
@@ -103,62 +153,50 @@ over a grid of $t$ values from $-1.25$ to $1.25$. State where the maximum occurs
 
 Consider the function
 
-$$
-f(x)=\exp(1.5x)-3(x+6)^2-0.05x^3,
-$$
+$$f(x)=\exp(1.5x)-3(x+6)^2-0.05x^3,$$
 
 with derivative
 
-$$
-f'(x)=1.5\exp(1.5x)-6(x+6)-0.15x^2.
-$$
+$$f'(x)=1.5\exp(1.5x)-6(x+6)-0.15x^2.$$
 
-a. Plot $f(x)$ over the interval $[-40,7]$. Based on the plot, describe the important features of the objective function that may affect numerical optimization.
+a.  Plot $f(x)$ over the interval $[-40,7]$. Based on the plot, describe the important features of the objective function that may affect numerical optimization.
 
-b. Use BFGS to minimize $f(x)$ twice, starting at $x^{(0)}=-15$ and $x^{(0)}=0$. Supply $f'(x)$ to the optimizer. For each run, report the final value of $x$, the final objective value, $|f'(x)|$, and whether the optimizer reported convergence.
+b.  Use BFGS to minimize $f(x)$ twice, starting at $x^{(0)}=-15$ and $x^{(0)}=0$. Supply $f'(x)$ to the optimizer. For each run, report the final value of $x$, the final objective value, $|f'(x)|$, and whether the optimizer reported convergence.
 
-c. Explain why the two runs can converge to different answers. Which run gives the lower objective value? What additional evidence would be needed before claiming that this point is the global minimum?
+c.  Explain why the two runs can converge to different answers. Which run gives the lower objective value? What additional evidence would be needed before claiming that this point is the global minimum?
 
 ## Question 4 (Nearly collinear predictors)
 
 Continue with $\mathbf X$ and $\mathbf y$ from Question 1. Set the random seed to 43202 and generate
 
-$$
-u_i\overset{\mathrm{iid}}{\sim}N(0,1),
-\qquad i=1,\ldots,n.
-$$
+$$u_i\overset{\mathrm{iid}}{\sim}N(0,1),
+\qquad i=1,\ldots,n.$$
 
 Define
 
-$$
-\mathbf x_6=\mathbf x_1+10^{-4}\mathbf u,
+$$\mathbf x_6=\mathbf x_1+10^{-4}\mathbf u,
 \qquad
 \mathbf X_+
 =
 \begin{bmatrix}
 \mathbf X & \mathbf x_6
-\end{bmatrix},
-$$
+\end{bmatrix},$$
 
 and let
 
-$$
-\mathbf y^\star=\mathbf y+10^{-3}\mathbf u.
-$$
+$$\mathbf y^\star=\mathbf y+10^{-3}\mathbf u.$$
 
 Use a numerically stable least-squares routine throughout.
 
-a. Fit $\mathbf y$ using $\mathbf X$ and $\mathbf X_+$. For each design matrix, report the condition number and training RMSE. For the augmented fit, also report the coefficients of $\mathbf x_1$ and $\mathbf x_6$.
+a.  Fit $\mathbf y$ using $\mathbf X$ and $\mathbf X_+$. For each design matrix, report the condition number and training RMSE. For the augmented fit, also report the coefficients of $\mathbf x_1$ and $\mathbf x_6$.
 
-b. Fit $\mathbf y^\star$ using $\mathbf X_+$. Report the changes in the coefficients of $\mathbf x_1$ and $\mathbf x_6$. Compare the two fitted-value vectors using their root mean squared difference and maximum absolute difference.
+b.  Fit $\mathbf y^\star$ using $\mathbf X_+$. Report the changes in the coefficients of $\mathbf x_1$ and $\mathbf x_6$. Compare the two fitted-value vectors using their root mean squared difference and maximum absolute difference.
 
-c. Use the identity
+c.  Use the identity
 
-$$
-\mathbf y^\star-\mathbf y
+$$\mathbf y^\star-\mathbf y
 =
-10(\mathbf x_6-\mathbf x_1)
-$$
+10(\mathbf x_6-\mathbf x_1)$$
 
 to explain why the fitted values change very little while the two coefficients change substantially. What does this example suggest about interpreting separate effects for nearly collinear predictors?
 
@@ -166,15 +204,13 @@ to explain why the fitted values change very little while the two coefficients c
 
 The file `data/data-manipulation.csv` is a small constructed data table containing an observation identifier, a group label, two numeric predictors, and a response. Some response values are missing. For analyses involving the response, use only observations with a recorded response. Do not replace a missing response with zero or a group mean.
 
-a. Read the data and report its dimensions, column types, number of duplicated identifiers, and number of missing values in each column. Create an analysis table containing only observations with a recorded response, and define
+a.  Read the data and report its dimensions, column types, number of duplicated identifiers, and number of missing values in each column. Create an analysis table containing only observations with a recorded response, and define
 
-$$
-\texttt{feature\_sum}=\texttt{x1}+\texttt{x2}.
-$$
+$$\texttt{feature\_sum}=\texttt{x1}+\texttt{x2}.$$
 
-b. For each group, report the number of observations, the mean response, and the mean of `feature_sum`. State clearly which observations these summaries describe.
+b.  For each group, report the number of observations, the mean response, and the mean of `feature_sum`. State clearly which observations these summaries describe.
 
-c. Sort the analysis table by response from largest to smallest and report the first three rows, including `observation_id`, `group`, `response`, and `feature_sum`. Add code checks verifying that the number of retained rows equals the number of nonmissing responses in the original data, that the analysis table has no missing response values, and that its identifiers are unique.
+c.  Sort the analysis table by response from largest to smallest and report the first three rows, including `observation_id`, `group`, `response`, and `feature_sum`. Add code checks verifying that the number of retained rows equals the number of nonmissing responses in the original data, that the analysis table has no missing response values, and that its identifiers are unique.
 
 ## Question 6 (Can 39 million Fitbit records represent US adults?)
 
@@ -193,11 +229,11 @@ Suppose the target is the mean of the participant-specific average daily step co
 
 > "This dataset contains more than 39 million daily Fitbit records. Therefore, the average of all recorded step counts should provide an accurate estimate of mean daily activity among US adults."
 
-a. Are the 39 million daily records independent observations? What characteristics or behaviors could cause some participants to contribute more recorded days than others? Explain how averaging all recorded days would then weight participants unequally.
+a.  Are the 39 million daily records independent observations? What characteristics or behaviors could cause some participants to contribute more recorded days than others? Explain how averaging all recorded days would then weight participants unequally.
 
-b. BYOD participants reported a median of 6,867 daily steps, compared with 5,797 among WEAR participants. Does this comparison show that already owning a Fitbit causes people to walk more? Explain your answer and give at least one plausible alternative explanation based on how participants entered the two groups.
+b.  BYOD participants reported a median of 6,867 daily steps, compared with 5,797 among WEAR participants. Does this comparison show that already owning a Fitbit causes people to walk more? Explain your answer and give at least one plausible alternative explanation based on how participants entered the two groups.
 
-c. A very large dataset can still produce a biased estimate of a population quantity when the people and observations entering the dataset are selected. Using this study, explain how selection of both participants and recorded days could make the observed data differ from the US adult population. Why might the naive average of all recorded daily step counts fail to estimate the stated target? You do not need to determine the direction of the bias.
+c.  A very large dataset can still produce a biased estimate of a population quantity when the people and observations entering the dataset are selected. Using this study, explain how selection of both participants and recorded days could make the observed data differ from the US adult population. Why might the naive average of all recorded daily step counts fail to estimate the stated target? You do not need to determine the direction of the bias.
 
 ### Source
 
