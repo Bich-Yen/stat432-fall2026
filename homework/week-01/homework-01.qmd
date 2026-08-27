@@ -134,7 +134,28 @@ $$\ell(\boldsymbol\beta,\sigma^2)
 
 a.  For fixed $\sigma^2$, explain why maximizing $\ell(\boldsymbol\beta,\sigma^2)$ over $\boldsymbol\beta$ is equivalent to minimizing the residual sum of squares. What does this imply about the maximum-likelihood estimate of $\boldsymbol\beta$?
 
+    For a fixed standard deviation, maximizing the log-likelihood over beta is equivalent to minimizing the residual sum of squares because the log-likelihood "measures how well a model explains the data" (<https://www.geeksforgeeks.org/data-science/log-likelihood/>). The second term in the log-likehood formula is the residual sum of squares. Therefore, if the residual sum of squares decreases, then the log-likelihood increases. The maximum-likelihood estimate of beta (coefficients) are the same as the coefficients found under the ordinary least squares method assuming errors are normally distributed (<https://rpubs.com/sharmaar_2024/MLE>).
+
 b.  For fixed $\boldsymbol\beta$, differentiate the log-likelihood with respect to $\sigma^2$ and derive its maximum-likelihood estimate. Calculate this estimate at $\widehat{\boldsymbol\beta}$ and compare it with the unbiased estimate of $\sigma^2$. Explain why the two denominators differ.
+
+    ```{r}
+    #Perform a partial derivative on the log-likehood with respect to the standard deviation
+    ##Solved the partial derivative by hand
+    ##log(a * b) = log(a) + log(b)
+    ##(logx)' = 1 / x
+    dl_dvar <- expression(-(n / (2 * var)) + (1 / (2 * pi * var ^ 2)) * t((y - X %*% beta)) %*% (y - X %*% beta))
+
+    #Calculate the maximum-likelihood estimate by setting the dl_dvar to 0
+    ##Solved for var by hand
+    n <- 100
+    var <- expression((t((y - X %*% beta)) %*% (y - X %*% beta)) / (n * pi))
+    MLE <- (t((y - X %*% beta_hat)) %*% (y - X %*% beta_hat)) / (n * pi)
+    MLE
+
+    #Calculate the unbiased estimate of the variance
+    ```
+
+    The maximum likelihood estimate at beta_hat is `r MLE`.
 
 c.  Let
 
