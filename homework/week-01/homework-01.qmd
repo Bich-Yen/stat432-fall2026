@@ -182,21 +182,39 @@ e_x2 <- c(0, 0, 1, 0, 0, 0)
 t <- seq(from = -1.25, to = 1.25, length.out = 100)
 
 #Create a function to evaluate the log-likelihood function
-t_values <- function(t_value){
+log_likelihood <- function(t_value){
   beta_hat2 <- beta_hat + t_value * e_x2
   RSS <- (t((y - X %*% beta_hat2)) %*% (y - X %*% beta_hat2))
   response <- -(n / 2) * log(2 * pi * MLE) - (1 / (2* MLE)) * RSS
-}
+  }
 
-#Plug in every t value into the function
-response_list <- list()
+#Plug in every t value into the function and solve
+response_vector <- c()
 for (i in t){
-  append(response_list, as.list(t_values(t[i])))
+  response <- as.vector(log_likelihood(i))
+  response_vector <- append(response_vector, response)
 }
 
-#beta_hat2 <- beta_hat + t %*% t(e_x2)
-#reponse_values <- -(n / 2) * log(2 * pi * MLE) - (1 / (2* MLE)) * (t((y - X %*% beta_hat2)) %*% (y - X %*% beta_hat2))
+#Plot over a grid of t values from -1.25 to 1.25
+plot(x = t, y = response_vector,
+     main = "Log-Likelihood of t between -1.25 and 1.25",
+     ylab = "response")
 ```
+
+The maximum occurs at t = 0. This agrees with the least-squares result because at t = 0, the term $t\mathbf e_{x_2}$ becomes zero. Therefore,
+
+$$\widehat{\boldsymbol\beta}=\boldsymbol\beta$$
+
+Under constant variance, the log-likelihood expression becomes
+
+$$\ell(\widehat{\boldsymbol\beta},\widehat{\sigma}_{\mathrm{MLE}}^2)
+=
+-\frac{n}{2}\log(2\pi\widehat{\sigma}_{\mathrm{MLE}}^2)
+-\frac{1}{2\widehat{\sigma}_{\mathrm{MLE}}^2}
+(\mathbf y-\mathbf X\widehat{\boldsymbol\beta})^{\mathsf T}
+(\mathbf y-\mathbf X\widehat{\boldsymbol\beta}).$$
+
+where the rightmost term is the residual sum of squares. When the residual sum of squares decreases, the log-likelihood increases.
 
 ## Question 3 (Starting values in nonconvex optimization)
 
