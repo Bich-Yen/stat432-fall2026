@@ -160,7 +160,7 @@ b.  For fixed $\boldsymbol\beta$, differentiate the log-likelihood with respect 
     unbiased_var
     ```
 
-    The maximum likelihood estimate at beta_hat is `r MLE` whereas the unbiased estimate of the variance is `r unbiased_var`. The maximum likelihood estimate is slightly lower than the unbiased estimate. The two denominators differ because the unbiased estimator accounts for the `p` degrees of freedom.
+    The maximum likelihood estimate at beta_hat is `r MLE` whereas the unbiased estimate of the variance is `r unbiased_var`. The maximum likelihood estimate is slightly lower than the unbiased estimate. The two denominators differ because the unbiased estimator accounts for the `p` degrees of freedom (<https://stats.stackexchange.com/questions/438438/why-is-the-mle-for-variance-in-single-linear-regression-biased>).
 
 c.  Let
 
@@ -228,9 +228,40 @@ $$f'(x)=1.5\exp(1.5x)-6(x+6)-0.15x^2.$$
 
 a.  Plot $f(x)$ over the interval $[-40,7]$. Based on the plot, describe the important features of the objective function that may affect numerical optimization.
 
+    Source: <https://stackoverflow.com/questions/26091323/how-to-plot-a-function-curve-in-r>
+
+    ```{r}
+    curve(exp(1.5 * x) - 3 * (x + 6)^2 - 0.05 * x^3, from = -40, to = 7)
+    ```
+
+    The curve gradually increases from -40 to 0, but it suddenly increases to infinity when approaching 7. This sudden increase to infinity may affect numerical optimization because there is no definitive "low point" on this graph.
+
 b.  Use BFGS to minimize $f(x)$ twice, starting at $x^{(0)}=-15$ and $x^{(0)}=0$. Supply $f'(x)$ to the optimizer. For each run, report the final value of $x$, the final objective value, $|f'(x)|$, and whether the optimizer reported convergence.
 
+    ```{r}
+    #BFGS = Broyden-Fletcher-Goldfarb-Shanno
+    ##Set method to BFGS in optim() function
+
+    #Define function and its first derivative
+    q3_fcn <- function(x){
+      exp(1.5 * x) - 3 * (x + 6)^2 - 0.05 * x^3
+      }
+    q3_first_derive <- function(x){
+      1.5 * exp(1.5 * x) - 6 * (x + 6) - 0.15 * x^2
+    }
+
+    #Use BFGS to minimize f(x) twice at x = -15 and x = 0
+    optimize_15 <- optim(par = -15, fn = q3_fcn, gr = q3_first_derive, method = "BFGS")
+    optimize_0 <- optim(par = 0, fn = q3_fcn, gr = q3_first_derive, method = "BFGS")
+    ```
+
+    At $x^{(0)}=-15$, the final value of $x$ is `optimize_15$par`, the final objective value, $|f'(x)|$, is `r optimize_15$value`, and the optimizer reported a convergence of `r optimize_15$convergence`.
+
+    At $x^{(0)}=0$, the final value of $x$ is `r optimize_0$par`, the final objective value, $|f'(x)|$ is `r optimize_0$value`, and the optimizer reported a convergence of `r optimize_0$convergence`.
+
 c.  Explain why the two runs can converge to different answers. Which run gives the lower objective value? What additional evidence would be needed before claiming that this point is the global minimum?
+
+    The two runs can converge to different answers because they had different starting points. In the graph above, there could be many local minimums around $x^{(0)}=-15$ and $x^{(0)}=0$ that is not visible to us. The `r optim()` function attempts to locate local minimums, not the global minimum, around the given starting point (<https://stackoverflow.com/questions/28546999/why-optimx-in-r-give-different-results-when-changing-the-starting-values>). The run where the function optimizes around $x^{(0)}=-15$ gives the lower objective value. Before claiming that $x^{(0)}=-15$ is the global minimum, the `r optim()` function should be ran at multiple starting points between -40 and 7.
 
 ## Question 4 (Nearly collinear predictors)
 
