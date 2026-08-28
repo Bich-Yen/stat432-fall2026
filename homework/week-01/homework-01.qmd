@@ -178,11 +178,24 @@ over a grid of $t$ values from $-1.25$ to $1.25$. State where the maximum occurs
 ```{r}
 e_x2 <- c(0, 0, 1, 0, 0, 0)
 
-#Generate predictor and response values for scatterplot
-##Variance is constant (MLE = MLE_hat)
+#Generate a range of t values from -1.25 to 1.25
 t <- seq(from = -1.25, to = 1.25, length.out = 100)
-beta_hat2 <- beta_hat + t %*% t(e_x2)
-reponse_values <- -(n / 2) * log(2 * pi * MLE_hat) - (1 / (2* MLE_hat)) * (t((y - X %*% beta_hat2)) %*% (y - X %*% beta_hat2))
+
+#Create a function to evaluate the log-likelihood function
+t_values <- function(t_value){
+  beta_hat2 <- beta_hat + t_value * e_x2
+  RSS <- (t((y - X %*% beta_hat2)) %*% (y - X %*% beta_hat2))
+  response <- -(n / 2) * log(2 * pi * MLE) - (1 / (2* MLE)) * RSS
+}
+
+#Plug in every t value into the function
+response_list <- list()
+for (i in t){
+  append(response_list, as.list(t_values(t[i])))
+}
+
+#beta_hat2 <- beta_hat + t %*% t(e_x2)
+#reponse_values <- -(n / 2) * log(2 * pi * MLE) - (1 / (2* MLE)) * (t((y - X %*% beta_hat2)) %*% (y - X %*% beta_hat2))
 ```
 
 ## Question 3 (Starting values in nonconvex optimization)
