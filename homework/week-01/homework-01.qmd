@@ -497,9 +497,15 @@ Suppose the target is the mean of the participant-specific average daily step co
 
 a.  Are the 39 million daily records independent observations? What characteristics or behaviors could cause some participants to contribute more recorded days than others? Explain how averaging all recorded days would then weight participants unequally.
 
+    The 39 million daily records are independent observations, which means the Fitbit records of one person does not affect the Fitbit records of another person. Some participants may have more recorded days than others due to their job, lifestyle, sudden events, etc. For example, some people may choose to travel with their car, by public transport, by bike, or by walking/running. People with office jobs may have less average step counts than those whose jobs require them to move around more. In addition, sudden events such as car accidents, health conditions, etc., may cause an individual to contribute less recorded days than others. Averaging all recorded days would weigh participants unequally because other factors that contribute to step count, such as lifestyle, careers, and transportation, are not controlled.
+
 b.  BYOD participants reported a median of 6,867 daily steps, compared with 5,797 among WEAR participants. Does this comparison show that already owning a Fitbit causes people to walk more? Explain your answer and give at least one plausible alternative explanation based on how participants entered the two groups.
 
+    Correlation is not causation. Already owning a Fitbit may correlate to a higher average daily steps, but it does not mean owning a Fitbit causes higher average daily steps. People who already own a Fitbit may be more likely to be health conscious, so they may have habits or lifestyles that help them stay more active. The BYOD group may already have biases because the group is not randomized. Assuming that invitations to be part of the WEAR group is randomized, participants in the WEAR group come have different habits, lifestyles, careers, etc.
+
 c.  A very large dataset can still produce a biased estimate of a population quantity when the people and observations entering the dataset are selected. Using this study, explain how selection of both participants and recorded days could make the observed data differ from the US adult population. Why might the naive average of all recorded daily step counts fail to estimate the stated target? You do not need to determine the direction of the bias.
+
+    The average of all recorded daily step counts fail to estimate the stated target because the groups were not randomly assigned. As stated previously, the BYOD may be more active since they invested into a Fitbit device, so they may have higher average daily steps than the WEAR group. The selection of recorded days could make the observed data differ from the US adult population because people may experience disasters, sudden events, or medical emergencies that may drastically reduce the average daily steps they have.
 
 ### Source
 
