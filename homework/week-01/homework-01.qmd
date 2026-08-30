@@ -288,7 +288,78 @@ Use a numerically stable least-squares routine throughout.
 
 a.  Fit $\mathbf y$ using $\mathbf X$ and $\mathbf X_+$. For each design matrix, report the condition number and training RMSE. For the augmented fit, also report the coefficients of $\mathbf x_1$ and $\mathbf x_6$.
 
+    ```{r}
+    #Set random seed to 43202
+    set.seed(43202)
+
+    #Generate a sample of 100 observations for u
+    u <- rnorm(n = 100, mean = 0, sd = 1)
+
+    #Define x6
+    x6 <- x1 + (10^-4) * u
+
+    #Create X_plus by adding x6 to existing X
+    X_plus <- cbind(X, x6 = x6)
+
+    #Fit y using X
+    ##This has been already done in Question 1
+    model
+
+    #Fit y using X_plus
+    data_plus <- cbind(data, x6 = x6)
+    model2 <- lm(y ~ x1 + x2 + x3 + x4 + x5 + x6, data = data_plus)
+    model2
+
+    #Condition Number: "a measure of sensitivity of solving a linear system of equations to variations in the input"
+    ##"Small condition numbers correspond to little error amplification. Remember, small condition numbers are good!" (https://cs357.cs.illinois.edu/textbook/notes/condition.html)
+
+    #Find the condition number for X and X_plus
+    cond_num_X <- kappa(X)
+    cond_num_X_plus <- kappa(X_plus)
+
+    #Calculate the training RMSE for X and X_plus
+    ##Calculating training RMSE for X has been done in Question 1
+
+    #Calculate residual vector
+    residuals2 <- resid(model2)
+
+    #Calculate training root mean squared error
+    training_RMSE2 <- ((1 / n) * sum(residuals2 ^ 2)) ^ (1 / 2)
+    ```
+
+    The condition number and training RMSE for $\mathbf X$ is `r cond_num_X` and `r training_RMSE` respectively. The condition number and training RMSE for $\mathbf X_+$ is `r cond_num_X_plus` and `r training_RMSE2` respectively. For the augmented fit, the coefficients of $\mathbf x_1$ and $\mathbf x_6$ are `r coef(model2)["x1"]` and `r coef(model2)["x6"]` respectively.
+
 b.  Fit $\mathbf y^\star$ using $\mathbf X_+$. Report the changes in the coefficients of $\mathbf x_1$ and $\mathbf x_6$. Compare the two fitted-value vectors using their root mean squared difference and maximum absolute difference.
+
+    ```{r}
+    #Define y_star
+    y_star <- y + (10^-3) * u
+
+    #Add y_star to data
+    data_star <- cbind(data_plus, y_star = y_star)
+
+    #Fit y_star using X_plus
+    model3 <- lm(y_star ~ x1 + x2 + x3 + x4 + x5 + x6, data = data_star)
+    model3
+
+    #Calculate change in coefficients x1 and x6
+    change_x1 <- coef(model2)["x1"] - coef(model3)["x1"]
+    change_x6 <- coef(model2)["x6"] - coef(model3)["x6"]
+
+    #Calculate root mean squared difference for model of y_star
+    residuals3 <- resid(model3)
+    training_RMSE3 <- ((1 / n) * sum(residuals3 ^ 2)) ^ (1 / 2)
+
+    #Calculate maximum absolute difference
+    ##1. Find the difference between y - y_star
+    ##2. Apply the absolute value to the array
+    ##3. Find the max value from that array
+    max_abs_diff <- max(abs(y - y_star))
+    ```
+
+    Between the model fitting $\mathbf y^\star$ using $\mathbf X_+$ to the model fitting $\mathbf y$ using $\mathbf X_+$, an increase of `r change_x1`
+
+    a.  Comparing $\mathbf x_1$ and $\mathbf x_6$ from t
 
 c.  Use the identity
 
