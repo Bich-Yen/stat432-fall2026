@@ -357,9 +357,7 @@ b.  Fit $\mathbf y^\star$ using $\mathbf X_+$. Report the changes in the coeffic
     max_abs_diff <- max(abs(y - y_star))
     ```
 
-    Between the model fitting $\mathbf y^\star$ using $\mathbf X_+$ to the model fitting $\mathbf y$ using $\mathbf X_+$, an increase of `r change_x1`
-
-    a.  Comparing $\mathbf x_1$ and $\mathbf x_6$ from t
+    Between the model fitting $\mathbf y^\star$ using $\mathbf X_+$ to the model fitting $\mathbf y$ using $\mathbf X_+$, the coefficient $\mathbf x_1$ increased by `r change_x1`. The coefficient $\mathbf x_6$ decreased by `r abs(change_x2)`. The two fitted-value vectors' root mean squared differences are the same, and their maximum absolute difference is `r max_abs_diff`.
 
 c.  Use the identity
 
@@ -369,6 +367,8 @@ $$\mathbf y^\star-\mathbf y
 
 to explain why the fitted values change very little while the two coefficients change substantially. What does this example suggest about interpreting separate effects for nearly collinear predictors?
 
+The difference between x~6~ and x~1~ is 10^-4^u, which is a very small difference. This means that x~6~ and x~1~ are nearly collinear predictors, which is why the fitted values change very little. This example suggests that it is difficult to interpret separate effects for nearly collinear predictors because "predictors that move together cannot be cleanly separated by the model" (<https://metricgate.com/blogs/collinearity-explained-intuitively/>).
+
 ## Question 5 (Data preparation and summary statistics)
 
 The file `data/data-manipulation.csv` is a small constructed data table containing an observation identifier, a group label, two numeric predictors, and a response. Some response values are missing. For analyses involving the response, use only observations with a recorded response. Do not replace a missing response with zero or a group mean.
@@ -377,9 +377,106 @@ a.  Read the data and report its dimensions, column types, number of duplicated 
 
 $$\texttt{feature\_sum}=\texttt{x1}+\texttt{x2}.$$
 
+```{r}
+#read.csv() reads a .csv file
+#dim() determines the dimensions
+data_manipulation <- read.csv("data/data-manipulation.csv")
+data_manipulation
+
+#str() displays the type of an object
+str(data_manipulation)
+
+#duplicated() finds which elements are duplicated
+#Find the number of duplicated identifiers
+duplicate_identity <- sum(duplicated(data_manipulation$observation_id))
+
+#Find the number of missing values in EACH column
+numNA_obseravtion_id <- sum(is.na(data_manipulation$observation_id))
+numNA_group <- sum(is.na(data_manipulation$group))
+numNA_x1 <- sum(is.na(data_manipulation$x1))
+numNA_x2 <- sum(is.na(data_manipulation$x2))
+numNA_response <- sum(is.na(data_manipulation$response))
+
+#Create an analysis table with only recoreded responses
+data_manipulation_clean <- na.omit(data_manipulation)
+data_manipulation_clean
+
+#Define feature_sum
+feature_sum <- function(data){
+  data$"x1" + data$"x2"
+  }
+```
+
+The data has `r dim(data_manipulation)[1]` rows and `r dim(data_manipulation)[2]` columns. The observation_id and group columns are characters whereas the x1, x2, and response columns are numerical. The number of duplicated identifiers is `r duplicate_identity`. There are no missing values in the observation_id, group, x1, and x2 columns, but there are `r numNA_response` missing values in the response column.
+
 b.  For each group, report the number of observations, the mean response, and the mean of `feature_sum`. State clearly which observations these summaries describe.
 
+    ```{r}
+    #Create 3 new dataframes separated by group
+    data_A <- data_manipulation_clean[data_manipulation_clean$"group" == "A", ]
+    data_B <- data_manipulation_clean[data_manipulation_clean$"group" == "B", ]
+    data_C <- data_manipulation_clean[data_manipulation_clean$"group" == "C", ]
+
+    #Determine the number of observations of each group
+    num_A <- length(data_A$"observation_id")
+    num_B <- length(data_B$"observation_id")
+    num_C <- length(data_C$"observation_id")
+
+    #Calculate the mean response of each group
+    avg_response_A <- mean(data_A$"response")
+    avg_response_B <- mean(data_B$"response")
+    avg_response_C <- mean(data_C$"response")
+
+    #Calculate the mean feature_sum of each group
+    avg_feature_sum_A <- mean(feature_sum(data_A))
+    avg_feature_sum_B <- mean(feature_sum(data_B))
+    avg_feature_sum_C <- mean(feature_sum(data_C))
+
+    #Make a summary table and label values
+    summary_5b <- data.frame(
+      Observation_Total = c(num_A, num_B, num_C),
+      Mean_Response = c(avg_response_A, avg_response_B, avg_response_C),
+      Mean_Feature_Sum = c(avg_feature_sum_A, avg_feature_sum_B, avg_feature_sum_C)
+    )
+
+    #Rename rows to appropriate group
+    rownames(summary_5b) <- c("A", "B", "C")
+
+    summary_5b
+    ```
+
 c.  Sort the analysis table by response from largest to smallest and report the first three rows, including `observation_id`, `group`, `response`, and `feature_sum`. Add code checks verifying that the number of retained rows equals the number of nonmissing responses in the original data, that the analysis table has no missing response values, and that its identifiers are unique.
+
+    ```{r}
+    #Sort the data from largest to smallest
+    ##Remeber to put a comma "," at the end to keep all columns
+    data_sorted <- data_manipulation_clean[order(data_manipulation_clean$"response", decreasing = TRUE), ]
+
+    #Add a feature_sum column to sorted dataframe
+    data_sorted$"feature_sum" <- feature_sum(data_sorted)
+
+    #Report the first three rows
+    head(data_sorted, 3)
+
+    code_check <- function(data){
+      #Check if number of retained rows equals the number of nonmissing responses in the original data
+      if (length(data_manipulation_clean$"observation_id") == length(data$"observation_id")){
+        print("The number of retained rows EQUALS the number of nonmissing responses in the original data.")
+      }
+      
+      #Check if the analysis table has no missing response values
+      if (anyNA(data) == FALSE){
+        print("The analysis table does NOT have missing values.")
+      }
+      
+      #Check if identifiers are unique
+      if ((sum(duplicated(data$observation_id))) == 0){
+        print("Its identifieres are unique.")
+      }
+    }
+
+    code_check(data_sorted)
+    ```
 
 ## Question 6 (Can 39 million Fitbit records represent US adults?)
 
