@@ -261,7 +261,7 @@ b.  Use BFGS to minimize $f(x)$ twice, starting at $x^{(0)}=-15$ and $x^{(0)}=0$
 
 c.  Explain why the two runs can converge to different answers. Which run gives the lower objective value? What additional evidence would be needed before claiming that this point is the global minimum?
 
-    The two runs can converge to different answers because they had different starting points. In the graph above, there could be many local minimums around $x^{(0)}=-15$ and $x^{(0)}=0$ that is not visible to us. The `r optim()` function attempts to locate local minimums, not the global minimum, around the given starting point (<https://stackoverflow.com/questions/28546999/why-optimx-in-r-give-different-results-when-changing-the-starting-values>). The run where the function optimizes around $x^{(0)}=-15$ gives the lower objective value. Before claiming that $x^{(0)}=-15$ is the global minimum, the `r optim()` function should be ran at multiple starting points between -40 and 7.
+    The two runs can converge to different answers because they had different starting points. In the graph above, there could be many local minimums around $x^{(0)}=-15$ and $x^{(0)}=0$ that is not visible to us. The optim() function attempts to locate local minimums, not the global minimum, around the given starting point (<https://stackoverflow.com/questions/28546999/why-optimx-in-r-give-different-results-when-changing-the-starting-values>). The run where the function optimizes around $x^{(0)}=-15$ gives the lower objective value. Before claiming that $x^{(0)}=-15$ is the global minimum, the optim() function should be run at multiple starting points between -40 and 7.
 
 ## Question 4 (Nearly collinear predictors)
 
@@ -357,7 +357,7 @@ b.  Fit $\mathbf y^\star$ using $\mathbf X_+$. Report the changes in the coeffic
     max_abs_diff <- max(abs(y - y_star))
     ```
 
-    Between the model fitting $\mathbf y^\star$ using $\mathbf X_+$ to the model fitting $\mathbf y$ using $\mathbf X_+$, the coefficient $\mathbf x_1$ increased by `r change_x1`. The coefficient $\mathbf x_6$ decreased by `r abs(change_x2)`. The two fitted-value vectors' root mean squared differences are the same, and their maximum absolute difference is `r max_abs_diff`.
+    Between the model fitting $\mathbf y^\star$ using $\mathbf X_+$ to the model fitting $\mathbf y$ using $\mathbf X_+$, the coefficient $\mathbf x_1$ increased by `r change_x1`. The coefficient $\mathbf x_6$ decreased by `r abs(change_x6)`. The two fitted-value vectors' root mean squared differences are the same, and their maximum absolute difference is `r max_abs_diff`.
 
 c.  Use the identity
 
