@@ -15,153 +15,162 @@ format:
 
 ## Question 1: Training and test error under a fixed design
 
-Consider a linear regression problem with $n=100$ observations and $p=20$ predictors. Generate one matrix $\mathbf X\in\mathbb R^{n\times p}$ whose entries are independent $\mathcal N(0,1)$ random variables, and then keep this realized matrix fixed. Let
+Consider a linear regression problem with $n=100$ observations and $p=20$ available covariates. Generate one matrix $\mathbf X_{\mathrm{all}}\in\mathbb R^{n\times p}$ whose entries are independent $\mathcal N(0,1)$ random variables, and then keep this realized matrix fixed. Let
 
-$$
-\beta_k=0.4^{\sqrt{k}},
-\qquad k=1,\ldots,p,
-$$
+$$\beta_j=0.4^{\sqrt{j}},
+\qquad j=1,\ldots,p,$$
 
 and define
 
-$$
-\boldsymbol\mu=\mathbf X\boldsymbol\beta.
-$$
+$$\boldsymbol\mu=\mathbf X_{\mathrm{all}}\boldsymbol\beta.$$
 
 Generate one training response and one independent test response from
 
-$$
-\begin{aligned}
+$$\begin{aligned}
 \mathbf y
 &=\boldsymbol\mu+\boldsymbol\epsilon,\\
 \mathbf y^*
 &=\boldsymbol\mu+\boldsymbol\epsilon^*,
-\end{aligned}
-$$
+\end{aligned}$$
 
 where
 
-$$
-\boldsymbol\epsilon,\boldsymbol\epsilon^*
+$$\boldsymbol\epsilon,\boldsymbol\epsilon^*
 \overset{\mathrm{ind}}{\sim}
-\mathcal N_n(\mathbf 0,\mathbf I_n).
-$$
+\mathcal N_n(\mathbf 0,\mathbf I_n).$$
 
 Here $\mathbf I_n$ is the $n\times n$ identity matrix.
 
-For $j=0,1,\ldots,p$, fit a linear model with an intercept and the first $j$ columns of $\mathbf X$ using $\mathbf y$. If $\widehat{\boldsymbol\mu}_j$ is its fitted mean vector, define
+For $m=0,1,\ldots,p$, fit a linear model with an intercept and the first $m$ columns of $\mathbf X_{\mathrm{all}}$ using $\mathbf y$. If $\widehat{\mathbf y}_m$ is its fitted mean vector, define
 
-$$
-\operatorname{MSE}_{\mathrm{train},j}
+$$\operatorname{MSE}_{\mathrm{train},m}
 =\frac{1}{n}
 \left\lVert
-\mathbf y-\widehat{\boldsymbol\mu}_j
-\right\rVert_2^2,
-$$
+\mathbf y-\widehat{\mathbf y}_m
+\right\rVert_2^2,$$
 
 and
 
-$$
-\operatorname{MSE}_{\mathrm{test},j}
+$$\operatorname{MSE}_{\mathrm{test},m}
 =\frac{1}{n}
 \left\lVert
-\mathbf y^*-\widehat{\boldsymbol\mu}_j
-\right\rVert_2^2.
-$$
+\mathbf y^*-\widehat{\mathbf y}_m
+\right\rVert_2^2.$$
 
-Repeat this process independently 200 times, keeping $\mathbf X$ fixed.
+Repeat this process independently 200 times, keeping $\mathbf X_{\mathrm{all}}$ fixed.
 
-Use seed `43202` before generating $\mathbf X$ and the response errors. R and Python use different random-number generators, so their exact numerical values need not agree.
+Use seed `43202` before generating $\mathbf X_{\mathrm{all}}$ and the response errors. R and Python use different random-number generators, so their exact numerical values need not agree.
 
-a. For each $j$, calculate the average training and test MSE over the 200 simulation runs. Plot both curves against $j$. Verify numerically that training MSE does not increase as predictors are added in each simulation run.
+```{r}
+# Code adapted from Fixed-Design Prediction Error and Model Selection (https://teazrq.github.io/stat432rpy/topics/linear-model-selection/training-testing-errors.html)
+set.seed(43202)
 
-b. For the model containing the first $j$ predictors, write
+# Generate one, fixed matrix X whose entries are independent N(0,1) random variables
+n <- 100
+p <- 20
+sigma <- 1
+X <- matrix(data = rnorm(n * p, mean = 0, sd = 1),
+                nrow = n, ncol = p)
+covariate_count <- 0:p
 
-$$
-\mathbf Z_j
+# Add the intercept coefficients to the matrix
+X_all <- cbind(1, X)
+
+# Define beta
+j <- 1:p
+beta <- c(0, 0.4 ^ sqrt(j))
+
+# Define mu (dimensions of mu should be n x 1)
+mu <- X_all %*% beta
+
+# Set up empty training and test responses matrices
+nsim <- 200
+train_mse_one <- matrix(NA_real_, nrow = nsim, ncol = p + 1)
+test_mse_one <- matrix(NA_real_, nrow = nsim, ncol = p + 1)
+
+for (k in seq_len(nsim)) {
+  # Generate training and independent test responses 200 times
+  y_train <- drop(X_all %*% beta) + rnorm(n, sd = sigma)
+  y_test <- drop(X_all %*% beta) + rnorm(n, sd = sigma)
+}
+```
+
+a.  For each $m$, calculate the average training and test MSE over the 200 simulation runs. Plot both curves against $m$. Verify numerically that training MSE does not increase as predictors are added in each simulation run.
+
+b.  For the model containing the first $m$ predictors, write
+
+$$\mathbf X_m
 =
-[\mathbf 1,\mathbf x_1,\ldots,\mathbf x_j],
+[\mathbf 1,\mathbf x_1,\ldots,\mathbf x_m],
 \qquad
-\mathbf H_j
+\mathbf H_m
 =
-\mathbf Z_j
-(\mathbf Z_j^{\mathsf T}\mathbf Z_j)^{-1}
-\mathbf Z_j^{\mathsf T}.
-$$
+\mathbf X_m
+(\mathbf X_m^{\mathsf T}\mathbf X_m)^{-1}
+\mathbf X_m^{\mathsf T}.$$
 
-Let $d_j=j+1$ be its fitted mean-parameter count, including the intercept. Define its **total squared approximation bias** as
+Here $\mathbf X_m\in\mathbb R^{n\times(m+1)}$ and $\mathbf H_m\in\mathbb R^{n\times n}$. The model has $m+1$ fitted coefficients, including the intercept. Define its **total squared approximation bias** as
 
-$$
-B_j^2
+$$B_m^2
 =\left\lVert
-(\mathbf I_n-\mathbf H_j)\boldsymbol\mu
-\right\rVert_2^2.
-$$
+(\mathbf I_n-\mathbf H_m)\boldsymbol\mu
+\right\rVert_2^2.$$
 
-Thus, $B_j^2/n$ is the mean squared approximation bias.
+Thus, $B_m^2/n$ is the mean squared approximation bias.
 
 Calculate the two theoretical expectations
 
-$$
-E\!\left(
-\operatorname{MSE}_{\mathrm{train},j}
-\mid \mathbf X
+$$E\!\left(
+\operatorname{MSE}_{\mathrm{train},m}
+\mid \mathbf X_{\mathrm{all}}
 \right)
-=\frac{B_j^2}{n}+1-\frac{d_j}{n},
-$$
+=\frac{B_m^2}{n}+1-\frac{m+1}{n},$$
 
 and
 
-$$
-E\!\left(
-\operatorname{MSE}_{\mathrm{test},j}
-\mid \mathbf X
+$$E\!\left(
+\operatorname{MSE}_{\mathrm{test},m}
+\mid \mathbf X_{\mathrm{all}}
 \right)
-=\frac{B_j^2}{n}+1+\frac{d_j}{n}.
-$$
+=\frac{B_m^2}{n}+1+\frac{m+1}{n}.$$
 
 Add these expectations to your plot and compare them with the simulation averages.
 
-c. Add the test MSE curve from one simulation run to the plot. Explain why this single curve is less smooth than the average test MSE. Use the approximation-bias and estimation-variance terms in the expected test MSE to explain why training MSE cannot be used by itself to select the predictor count.
+c.  Add the test MSE curve from one simulation run to the plot. Explain why this single curve is less smooth than the average test MSE. Use the approximation-bias and estimation-variance terms in the expected test MSE to explain why training MSE cannot be used by itself to select the predictor count.
 
 ## Question 2: Prediction error at one target point
 
-Let $n=100$, $p=6$, and $\sigma^2=1$. Construct the fixed matrix $\mathbf X\in\mathbb R^{n\times p}$ with entries
+Let $n=100$, $p=6$, and $\sigma^2=1$. Construct the fixed covariate matrix $\mathbf X_{\mathrm{all}}\in\mathbb R^{n\times p}$ with entries
 
-$$
-X_{ik}
+$$(\mathbf X_{\mathrm{all}})_{ij}
 =\sqrt{2}\cos\left\{
-\frac{\pi k(i-\tfrac12)}{n}
+\frac{\pi j(i-\tfrac12)}{n}
 \right\},
 \qquad
 i=1,\ldots,n,
 \quad
-k=1,\ldots,p.
-$$
+j=1,\ldots,p.$$
 
 Its columns satisfy
 
-$$
-\mathbf 1^{\mathsf T}\mathbf X=\mathbf 0^{\mathsf T},
+$$\mathbf 1^{\mathsf T}\mathbf X_{\mathrm{all}}=\mathbf 0^{\mathsf T},
 \qquad
-\frac{1}{n}\mathbf X^{\mathsf T}\mathbf X=\mathbf I_p.
-$$
+\frac{1}{n}\mathbf X_{\mathrm{all}}^{\mathsf T}\mathbf X_{\mathrm{all}}=\mathbf I_p.$$
 
 Here $\mathbf I_p$ is the $p\times p$ identity matrix.
 
-The following code shows a direct construction of $\mathbf X$.
+The following code shows a direct construction of $\mathbf X_{\mathrm{all}}$.
 
 ::: {.panel-tabset group="language"}
-
 ### R
 
 ```{r}
 #| eval: false
 n <- 100
 p <- 6
-X <- outer(
+X_all <- outer(
   1:n, 1:p,
-  function(i, k) sqrt(2) * cos(pi * k * (i - 0.5) / n)
+  function(i, j) sqrt(2) * cos(pi * j * (i - 0.5) / n)
 )
 ```
 
@@ -173,96 +182,78 @@ import numpy as np
 
 n, p = 100, 6
 i = np.arange(1, n + 1)[:, None]
-k = np.arange(1, p + 1)[None, :]
-X = np.sqrt(2) * np.cos(np.pi * k * (i - 0.5) / n)
+j = np.arange(1, p + 1)[None, :]
+X_all = np.sqrt(2) * np.cos(np.pi * j * (i - 0.5) / n)
 ```
-
 :::
 
-Keep $\mathbf X$ fixed and generate one training response from
+Keep $\mathbf X_{\mathrm{all}}$ fixed and generate one training response from
 
-$$
-\mathbf y
-=\mathbf X\boldsymbol\beta+\boldsymbol\epsilon,
+$$\mathbf y
+=\mathbf X_{\mathrm{all}}\boldsymbol\beta+\boldsymbol\epsilon,
 \qquad
 \boldsymbol\beta
-=(0.5,0.5,0.5,0.5,0.5,0.5)^{\mathsf T},
-$$
+=(0.5,0.5,0.5,0.5,0.5,0.5)^{\mathsf T},$$
 
 where
 
-$$
-\boldsymbol\epsilon
+$$\boldsymbol\epsilon
 \sim
-\mathcal N_n(\mathbf 0,\mathbf I_n).
-$$
+\mathcal N_n(\mathbf 0,\mathbf I_n).$$
 
 Here $\mathbf I_n$ is the $n\times n$ identity matrix.
 
-For $j=0,\ldots,6$, fit a linear model with an intercept and the first $j$ predictors. Consider prediction of the mean response at
+For $m=0,\ldots,p$, fit a linear model with an intercept and the first $m$ predictors. Consider prediction of the mean response at
 
-$$
-\mathbf x_0=(0,1,0,0,1,0)^{\mathsf T}.
-$$
+$$\mathbf x_0=(0,1,0,0,1,0)^{\mathsf T}.$$
 
 Write
 
-$$
-\mu_0=\mathbf x_0^{\mathsf T}\boldsymbol\beta,
-$$
+$$\mu_0=\mathbf x_0^{\mathsf T}\boldsymbol\beta,$$
 
-and let $\widehat\mu_{0,j}$ be the prediction from the model containing the first $j$ predictors. Here $x_{0k}$ denotes the $k$th coordinate of $\mathbf x_0$. For this design,
+and let $\widehat\mu_{0,m}$ be the prediction from the model containing the first $m$ predictors. Here $x_{0j}$ denotes the $j$th coordinate of $\mathbf x_0$. For this design,
 
-$$
-E\!\left[
-\left(\widehat\mu_{0,j}-\mu_0\right)^2
-\mid \mathbf X
+$$E\!\left[
+\left(\widehat\mu_{0,m}-\mu_0\right)^2
+\mid \mathbf X_{\mathrm{all}}
 \right]
 =
 \left(
-\sum_{k=j+1}^{p}x_{0k}\beta_k
+\sum_{j=m+1}^{p}x_{0j}\beta_j
 \right)^2
 +\frac{\sigma^2}{n}
 \left(
-1+\sum_{k=1}^{j}x_{0k}^2
-\right).
-$$
+1+\sum_{j=1}^{m}x_{0j}^2
+\right).$$
 
-a. Calculate $\mu_0$ and the theoretical expected squared error for $j=0,\ldots,6$. Identify the values of $j$ where this error changes and where it remains unchanged.
+a.  Calculate $\mu_0$, the theoretical squared bias, and the expected squared error for $m=0,\ldots,p$ using the formula above. **You do not need to derive the formula.** Briefly explain in words why it consists of a squared bias term from omitted predictors and a variance term from estimating coefficients; no proof is required. Identify the values of $m$ where the expected squared error changes and where it remains unchanged.
 
-b. Use seed `43203`. Generate the response, fit the models, and calculate
+b.  Use seed `43203`. Generate the response, fit the models, and calculate
 
-$$
-\left(\widehat\mu_{0,j}-\mu_0\right)^2.
-$$
+$$\left(\widehat\mu_{0,m}-\mu_0\right)^2.$$
 
-Repeat this independently 200 times. Plot the simulation averages and theoretical expectations together. Report the smallest $j$ that minimizes the theoretical error.
+Repeat this independently 200 times. Plot the simulation averages and theoretical expectations together. Report the smallest $m$ that minimizes the theoretical error.
 
-c. All six regression coefficients are nonzero. Explain why only predictors 2 and 5 contribute directly to the mean response at $\mathbf x_0$. Contrast this target-specific error with the test MSE averaged over all rows of $\mathbf X$ in Question 1.
+c.  All six regression coefficients are nonzero. Explain why only predictors 2 and 5 contribute directly to the mean response at $\mathbf x_0$. Contrast this target-specific error with the test MSE averaged over all rows of $\mathbf X_{\mathrm{all}}$ in Question 1.
 
 ## Question 3: The optimism correction
 
-Choose one candidate model before observing the response. Let $\mathbf Z\in\mathbb R^{n\times d}$ be its full-rank design matrix, including the intercept, and let
+Choose one candidate model before observing the response. Let $p$ be its number of predictors and let $\mathbf X\in\mathbb R^{n\times(p+1)}$ be its full-rank design matrix, including the intercept. The model has $p+1$ fitted coefficients. Let
 
-$$
-\mathbf H
-=\mathbf Z
-(\mathbf Z^{\mathsf T}\mathbf Z)^{-1}
-\mathbf Z^{\mathsf T}
-$$
+$$\mathbf H
+=\mathbf X
+(\mathbf X^{\mathsf T}\mathbf X)^{-1}
+\mathbf X^{\mathsf T}$$
 
 be its hat matrix. Suppose
 
-$$
-\mathbf y=\boldsymbol\mu+\boldsymbol\epsilon,
+$$\mathbf y=\boldsymbol\mu+\boldsymbol\epsilon,
 \qquad
-\mathbf y^*=\boldsymbol\mu+\boldsymbol\epsilon^*,
-$$
+\mathbf y^*=\boldsymbol\mu+\boldsymbol\epsilon^*,$$
 
-Conditional on the fixed design $\mathbf Z$, the two error vectors are independent, have mean zero, and have covariance matrix $\sigma^2\mathbf I_n$. Define
+Conditional on the fixed design $\mathbf X$, the two error vectors are independent, have mean zero, and have covariance matrix $\sigma^2\mathbf I_n$. Define
 
-$$
-\operatorname{MSE}_{\mathrm{train}}
+$$\operatorname{MSE}_{\mathrm{train}}
 =
 \frac{1}{n}
 \left\lVert
@@ -274,98 +265,79 @@ $$
 \frac{1}{n}
 \left\lVert
 \mathbf y^*-\mathbf H\mathbf y
-\right\rVert_2^2.
-$$
+\right\rVert_2^2.$$
 
 The conditional bias vector of the fitted mean is
 
-$$
-E(\mathbf H\mathbf y\mid\mathbf Z)-\boldsymbol\mu
+$$E(\mathbf H\mathbf y\mid\mathbf X)-\boldsymbol\mu
 =
--(\mathbf I_n-\mathbf H)\boldsymbol\mu.
-$$
+-(\mathbf I_n-\mathbf H)\boldsymbol\mu.$$
 
 Let $B^2$ denote the **total squared approximation bias**:
 
-$$
-B^2
+$$B^2
 =\left\lVert
 (\mathbf I_n-\mathbf H)\boldsymbol\mu
-\right\rVert_2^2.
-$$
+\right\rVert_2^2.$$
 
 Thus, $B^2/n$ is the mean squared approximation bias.
 
 You may use
 
-$$
-\mathbf H^{\mathsf T}=\mathbf H,
+$$\mathbf H^{\mathsf T}=\mathbf H,
 \qquad
 \mathbf H^2=\mathbf H,
 \qquad
-\operatorname{tr}(\mathbf H)=d.
-$$
+\operatorname{tr}(\mathbf H)=p+1.$$
 
 For any fixed matrix $\mathbf A$, you may also use
 
-$$
-E\!\left(
+$$E\!\left(
 \boldsymbol\epsilon^{\mathsf T}
 \mathbf A
 \boldsymbol\epsilon
-\mid \mathbf Z
+\mid \mathbf X
 \right)
-=\sigma^2\operatorname{tr}(\mathbf A).
-$$
+=\sigma^2\operatorname{tr}(\mathbf A).$$
 
-a. Derive
+a.  Derive
 
-$$
-E(\operatorname{MSE}_{\mathrm{train}}\mid\mathbf Z)
+$$E(\operatorname{MSE}_{\mathrm{train}}\mid\mathbf X)
 =\frac{B^2}{n}
-+\sigma^2\left(1-\frac{d}{n}\right),
-$$
++\sigma^2\left(1-\frac{p+1}{n}\right),$$
 
 and
 
-$$
-E(\operatorname{MSE}_{\mathrm{test}}\mid\mathbf Z)
+$$E(\operatorname{MSE}_{\mathrm{test}}\mid\mathbf X)
 =\frac{B^2}{n}
-+\sigma^2\left(1+\frac{d}{n}\right).
-$$
++\sigma^2\left(1+\frac{p+1}{n}\right).$$
 
-b. Deduce the expected optimism, defined as $E(\operatorname{MSE}_{\mathrm{test}}-\operatorname{MSE}_{\mathrm{train}}\mid\mathbf Z)$. For
+b.  Deduce the expected optimism, defined as $E(\operatorname{MSE}_{\mathrm{test}}-\operatorname{MSE}_{\mathrm{train}}\mid\mathbf X)$. For
 
-$$
-n=120,
+$$n=120,
 \qquad
-d=5,
+p=4,
 \qquad
 \frac{B^2}{n}=0.04,
 \qquad
-\sigma^2=1,
-$$
+\sigma^2=1,$$
 
 calculate the expected training MSE, expected test MSE, and their difference. Explain why the ordering need not hold for every realized pair of responses.
 
-c. Continue with $n=120$ and $d=5$. Suppose the candidate model has residual sum of squares $\operatorname{RSS}=116.4$, and suppose a common estimate of the error variance is $\widehat\sigma^2=0.96$.
+c.  Continue with $n=120$ and $p=4$. Suppose the candidate model has residual sum of squares $\operatorname{RSS}=116.4$, and suppose a common estimate of the error variance is $\widehat\sigma^2=0.96$.
 
 Calculate
 
-$$
-\widehat{\operatorname{MSE}}_{\mathrm{test}}
+$$\widehat{\operatorname{MSE}}_{\mathrm{test}}
 =\frac{
-\operatorname{RSS}+2d\widehat\sigma^2
-}{n},
-$$
+\operatorname{RSS}+2(p+1)\widehat\sigma^2
+}{n},$$
 
 and
 
-$$
-C_p
+$$C_p
 =\frac{\operatorname{RSS}}{\widehat\sigma^2}
--n+2d.
-$$
+-n+2(p+1).$$
 
 Show how these two quantities are related, and explain why minimizing $C_p$ is equivalent to minimizing the corrected test MSE when $n$ and $\widehat\sigma^2$ are common to all candidate models.
 
@@ -373,68 +345,60 @@ Show how these two quantities are related, and explain why minimizing $C_p$ is e
 
 Use `data/diabetes.csv`, with `y` as the response. Use rows 1 through 370 as the training data, and let $n=370$ denote the training sample size. Do not use rows 371 through 442 in this question. Fit the following ordinary least-squares models, each with an intercept.
 
-| Model | Predictors | $d$ |
-|---|---|---:|
-| Model A | `bmi`, `bp`, `s5`, `sex`, `s1`, `s2`, `s4` | 8 |
-| Model B | all predictors in Model A, followed by `s6` | 9 |
-| Full reference | all ten predictors | 11 |
+| Model          | Predictors                                  | $p$ |
+|----------------|---------------------------------------------|----:|
+| Model A        | `bmi`, `bp`, `s5`, `sex`, `s1`, `s2`, `s4`  |   7 |
+| Model B        | all predictors in Model A, followed by `s6` |   8 |
+| Full reference | all ten predictors                          |  10 |
 
-Here $d$ counts fitted mean parameters, including the intercept. Estimate one common noise variance from the full reference model:
+Here $p$ counts predictors, so each model has $p+1$ fitted coefficients including the intercept. Estimate one common noise variance from the full reference model, using $p=10$:
 
-$$
-\widehat\sigma^2_{\mathrm{full}}
-=\frac{\operatorname{RSS}_{\mathrm{full}}}{n-11}.
-$$
+$$\widehat\sigma^2
+=\frac{\operatorname{RSS}_{\mathrm{full}}}{n-(p+1)}.$$
 
 For Models A and B, calculate
 
-$$
-C_p
-=\frac{\operatorname{RSS}}{\widehat\sigma^2_{\mathrm{full}}}
--n+2d,
-$$
+$$C_p
+=\frac{\operatorname{RSS}}{\widehat\sigma^2}
+-n+2(p+1),$$
 
-$$
-\operatorname{AIC}^{\mathrm{red}}
-=n\log\left(\frac{\operatorname{RSS}}{n}\right)+2d,
-$$
+$$\operatorname{AIC}^{\mathrm{red}}
+=n\log\left(\frac{\operatorname{RSS}}{n}\right)+2(p+1),$$
 
 and
 
-$$
-\operatorname{BIC}^{\mathrm{red}}
+$$\operatorname{BIC}^{\mathrm{red}}
 =n\log\left(\frac{\operatorname{RSS}}{n}\right)
-+d\log(n).
-$$
++(p+1)\log(n).$$
 
 The reduced AIC and BIC omit constants shared by the two candidate models. Smaller values are preferred within each criterion.
 
-a. Fit the three models. Report $d$, RSS, the residual degrees of freedom of the full model, and $\widehat\sigma^2_{\mathrm{full}}$.
+a.  Fit the three models. Report $p$, RSS, the residual degrees of freedom of the full model, and $\widehat\sigma^2$.
 
-b. Calculate $C_p$, reduced AIC, and reduced BIC for Models A and B. State which model each criterion selects. Do not compare numerical values across different criteria.
+b.  Calculate $C_p$, reduced AIC, and reduced BIC for Models A and B. State which model each criterion selects. Do not compare numerical values across different criteria.
 
-c. Compare the improvement in fit from adding `s6` with the one-parameter penalty under each criterion. Use this comparison to explain any disagreement. Why does selecting a model not establish that it is the true data-generating model?
+c.  Compare the improvement in fit from adding `s6` with the one-parameter penalty under each criterion. Use this comparison to explain any disagreement. Why does selecting a model not establish that it is the true data-generating model?
 
 ## Question 5: Validation and final test data
 
-Use rows 1 through 370 of `diabetes.csv` as the training data and rows 371 through 442 as the final test data. Consider eleven nested candidate models. For $j=0,1,\ldots,10$, the model with $j$ predictors contains an intercept and the first $j$ predictors in this order:
+Use rows 1 through 370 of `diabetes.csv` as the training data and rows 371 through 442 as the final test data. Consider eleven nested candidate models. For $m=0,1,\ldots,10$, the model with $m$ predictors contains an intercept and the first $m$ predictors in this order:
 
 `age`, `sex`, `bmi`, `bp`, `s1`, `s2`, `s3`, `s4`, `s5`, `s6`.
 
 An analyst proposes the following procedure:
 
-1. Fit all eleven candidate models using the training data.
-2. Calculate the MSE of each model on the final test data.
-3. Select the model with the smallest test MSE.
-4. Report that minimum as the final estimate of prediction error.
+1.  Fit all eleven candidate models using the training data.
+2.  Calculate the MSE of each model on the final test data.
+3.  Select the model with the smallest test MSE.
+4.  Report that minimum as the final estimate of prediction error.
 
 The analyst argues that the procedure is valid because the final test data were not used to estimate the regression coefficients.
 
-a. Identify the first step that misuses the final test data. Explain why the minimum of eleven test MSE values is generally too favorable as an estimate of the selected procedure's future prediction error.
+a.  Identify the first step that misuses the final test data. Explain why the minimum of eleven test MSE values is generally too favorable as an estimate of the selected procedure's future prediction error.
 
-b. Rewrite the analysis using five-fold cross-validation within the training data. State how the predictor count is selected, what is refitted, and when the final test data may be used.
+b.  Rewrite the analysis using five-fold cross-validation within the training data. State how the predictor count is selected, what is refitted, and when the final test data may be used.
 
-c. Suppose the analyst has already examined all eleven test MSE values. What can still be reported transparently, and what additional data would be needed for a new final evaluation?
+c.  Suppose the analyst has already examined all eleven test MSE values. What can still be reported transparently, and what additional data would be needed for a new final evaluation?
 
 ## Reference
 
