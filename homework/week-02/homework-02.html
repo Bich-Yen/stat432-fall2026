@@ -2301,6 +2301,7 @@ window.Quarto = {
 };
 </script>
 
+<style type="text/css">body {font-size: 9pt;line-height: 1.1;}h1 {font-size: 16pt;}h2 {font-size: 13pt;}h3 {font-size: 11pt;}p,li,table {font-size: 9pt;}</style>
 </head>
 
 <body class="lecture-page practice-page quarto-light">
@@ -2361,17 +2362,15 @@ window.Quarto = {
 \mathcal N_n(\mathbf 0,\mathbf I_n).\]</span></p>
 <p>Here <span class="math inline">\(\mathbf I_n\)</span> is the <span class="math inline">\(n\times n\)</span> identity matrix.</p>
 <p>For <span class="math inline">\(m=0,1,\ldots,p\)</span>, fit a linear model with an intercept and the first <span class="math inline">\(m\)</span> columns of <span class="math inline">\(\mathbf X_{\mathrm{all}}\)</span> using <span class="math inline">\(\mathbf y\)</span>. If <span class="math inline">\(\widehat{\mathbf y}_m\)</span> is its fitted mean vector, define</p>
-<p><span class="math display">\[\operatorname{MSE}_{\mathrm{train},m}
-=\frac{1}{n}
-\left\lVert
-\mathbf y-\widehat{\mathbf y}_m
-\right\rVert_2^2,\]</span></p>
-<p>and</p>
-<p><span class="math display">\[\operatorname{MSE}_{\mathrm{test},m}
-=\frac{1}{n}
-\left\lVert
-\mathbf y^*-\widehat{\mathbf y}_m
-\right\rVert_2^2.\]</span></p>
+<p><span class="math display">\[
+\begin{aligned}
+\operatorname{MSE}_{\mathrm{train},m}
+&amp;=\frac{1}{n}\left\lVert\mathbf y-\widehat{\mathbf y}_m\right\rVert_2^2,
+&amp;\qquad
+\operatorname{MSE}_{\mathrm{test},m}
+&amp;=\frac{1}{n}\left\lVert\mathbf y^*-\widehat{\mathbf y}_m\right\rVert_2^2.
+\end{aligned}
+\]</span></p>
 <p>Repeat this process independently 200 times, keeping <span class="math inline">\(\mathbf X_{\mathrm{all}}\)</span> fixed.</p>
 <p>Use seed <code>43202</code> before generating <span class="math inline">\(\mathbf X_{\mathrm{all}}\)</span> and the response errors. R and Python use different random-number generators, so their exact numerical values need not agree.</p>
 <ol type="a">
@@ -2395,17 +2394,13 @@ window.Quarto = {
 \right\rVert_2^2.\]</span></p>
 <p>Thus, <span class="math inline">\(B_m^2/n\)</span> is the mean squared approximation bias.</p>
 <p>Calculate the two theoretical expectations</p>
-<p><span class="math display">\[E\!\left(
-\operatorname{MSE}_{\mathrm{train},m}
-\mid \mathbf X_{\mathrm{all}}
-\right)
-=\frac{B_m^2}{n}+1-\frac{m+1}{n},\]</span></p>
-<p>and</p>
-<p><span class="math display">\[E\!\left(
-\operatorname{MSE}_{\mathrm{test},m}
-\mid \mathbf X_{\mathrm{all}}
-\right)
-=\frac{B_m^2}{n}+1+\frac{m+1}{n}.\]</span></p>
+<p><span class="math display">\[\begin{aligned}
+E\!\left(\operatorname{MSE}_{\mathrm{train},m}\mid\mathbf X_{\mathrm{all}}\right)
+&amp;=\frac{B_m^2}{n}+1-\frac{m+1}{n},
+&amp;\qquad
+E\!\left(\operatorname{MSE}_{\mathrm{test},m}\mid\mathbf X_{\mathrm{all}}\right)
+&amp;=\frac{B_m^2}{n}+1+\frac{m+1}{n}.
+\end{aligned}\]</span></p>
 <p>Add these expectations to your plot and compare them with the simulation averages.</p>
 <p>Refer to the final graph in part (1c). The average training MSE is slightly above the expected training MSE whereas the average test MSE is slightly below the expected test MSE.</p>
 <ol start="3" type="a">
@@ -2528,11 +2523,16 @@ j=1,\ldots,p.\]</span></p>
 (\mathbf X^{\mathsf T}\mathbf X)^{-1}
 \mathbf X^{\mathsf T}\]</span></p>
 <p>be its hat matrix. Suppose</p>
-<p><span class="math display">\[\mathbf y=\boldsymbol\mu+\boldsymbol\epsilon,
-\qquad
-\mathbf y^*=\boldsymbol\mu+\boldsymbol\epsilon^*,\]</span></p>
-<p>Conditional on the fixed design <span class="math inline">\(\mathbf X\)</span>, the two error vectors are independent, have mean zero, and have covariance matrix <span class="math inline">\(\sigma^2\mathbf I_n\)</span>. Define</p>
-<p><span class="math display">\[\operatorname{MSE}_{\mathrm{train}}
+<p><span class="math display">\[\begin{aligned}
+C_p
+&amp;=\frac{\operatorname{RSS}}{\widehat\sigma^2}-n+2(p+1),
+&amp;\qquad
+\operatorname{AIC}^{\mathrm{red}}
+&amp;=n\log\left(\frac{\operatorname{RSS}}{n}\right)+2(p+1),
+&amp;\qquad
+\operatorname{BIC}^{\mathrm{red}}
+&amp;=n\log\left(\frac{\operatorname{RSS}}{n}\right)+(p+1)\log(n).
+\end{aligned}\]</span> <span class="math display">\[\operatorname{MSE}_{\mathrm{train}}
 =
 \frac{1}{n}
 \left\lVert
@@ -2572,13 +2572,13 @@ j=1,\ldots,p.\]</span></p>
 <ol type="a">
 <li>Derive</li>
 </ol>
-<p><span class="math display">\[E(\operatorname{MSE}_{\mathrm{train}}\mid\mathbf X)
-=\frac{B^2}{n}
-+\sigma^2\left(1-\frac{p+1}{n}\right),\]</span></p>
-<p>and</p>
-<p><span class="math display">\[E(\operatorname{MSE}_{\mathrm{test}}\mid\mathbf X)
-=\frac{B^2}{n}
-+\sigma^2\left(1+\frac{p+1}{n}\right).\]</span></p>
+<p><span class="math display">\[\begin{aligned}
+E(\operatorname{MSE}_{\mathrm{train}}\mid\mathbf X)
+&amp;=\frac{B^2}{n}+\sigma^2\left(1-\frac{p+1}{n}\right),
+&amp;\qquad
+E(\operatorname{MSE}_{\mathrm{test}}\mid\mathbf X)
+&amp;=\frac{B^2}{n}+\sigma^2\left(1+\frac{p+1}{n}\right).
+\end{aligned}\]</span></p>
 <p>Substitute y into MSE_train and distribute</p>
 <p><span class="math display">\[\ y - \ Hy = (\ I_n - H)(\mu + \epsilon) = (\ I_n - H)\mu + (\ I_n - H)\epsilon\]</span></p>
 <p>The squared length of the conditional bias vector of the fitted mean is B^2, the total squared approximation bias. For the error term,</p>
@@ -2624,13 +2624,13 @@ p=4,
 <li>Continue with <span class="math inline">\(n=120\)</span> and <span class="math inline">\(p=4\)</span>. Suppose the candidate model has residual sum of squares <span class="math inline">\(\operatorname{RSS}=116.4\)</span>, and suppose a common estimate of the error variance is <span class="math inline">\(\widehat\sigma^2=0.96\)</span>.</li>
 </ol>
 <p>Calculate</p>
-<p><span class="math display">\[\widehat{\operatorname{MSE}}_{\mathrm{test}}
-=\frac{
-\operatorname{RSS}+2(p+1)\widehat\sigma^2
-}{n},\]</span>and</p>
-<p><span class="math display">\[C_p
-=\frac{\operatorname{RSS}}{\widehat\sigma^2}
--n+2(p+1).\]</span></p>
+<p><span class="math display">\[\begin{aligned}
+\widehat{\operatorname{MSE}}_{\mathrm{test}}
+&amp;=\frac{\operatorname{RSS}+2(p+1)\widehat\sigma^2}{n},
+&amp;\qquad
+C_p
+&amp;=\frac{\operatorname{RSS}}{\widehat\sigma^2}-n+2(p+1).
+\end{aligned}\]</span></p>
 <p>Show how these two quantities are related, and explain why minimizing <span class="math inline">\(C_p\)</span> is equivalent to minimizing the corrected test MSE when <span class="math inline">\(n\)</span> and <span class="math inline">\(\widehat\sigma^2\)</span> are common to all candidate models.</p>
 <p>MSE_test_hat is 1.05 and Cp is 11.25. If we plug in Cp into MSE_test_hat, we get</p>
 <p><span class="math display">\[\widehat{\operatorname{MSE}}_{\mathrm{test}}
