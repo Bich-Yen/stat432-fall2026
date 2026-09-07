@@ -5,6 +5,7 @@ body-classes: "lecture-page practice-page"
 format:
   html:
     embed-resources: true
+    css: styles.css
     page-layout: full
     toc: true
     toc-title: "On this page"
@@ -46,19 +47,15 @@ Here $\mathbf I_n$ is the $n\times n$ identity matrix.
 
 For $m=0,1,\ldots,p$, fit a linear model with an intercept and the first $m$ columns of $\mathbf X_{\mathrm{all}}$ using $\mathbf y$. If $\widehat{\mathbf y}_m$ is its fitted mean vector, define
 
-$$\operatorname{MSE}_{\mathrm{train},m}
-=\frac{1}{n}
-\left\lVert
-\mathbf y-\widehat{\mathbf y}_m
-\right\rVert_2^2,$$
-
-and
-
-$$\operatorname{MSE}_{\mathrm{test},m}
-=\frac{1}{n}
-\left\lVert
-\mathbf y^*-\widehat{\mathbf y}_m
-\right\rVert_2^2.$$
+$$
+\begin{aligned}
+\operatorname{MSE}_{\mathrm{train},m}
+&=\frac{1}{n}\left\lVert\mathbf y-\widehat{\mathbf y}_m\right\rVert_2^2,
+&\qquad
+\operatorname{MSE}_{\mathrm{test},m}
+&=\frac{1}{n}\left\lVert\mathbf y^*-\widehat{\mathbf y}_m\right\rVert_2^2.
+\end{aligned}
+$$
 
 Repeat this process independently 200 times, keeping $\mathbf X_{\mathrm{all}}$ fixed.
 
@@ -161,19 +158,13 @@ Thus, $B_m^2/n$ is the mean squared approximation bias.
 
 Calculate the two theoretical expectations
 
-$$E\!\left(
-\operatorname{MSE}_{\mathrm{train},m}
-\mid \mathbf X_{\mathrm{all}}
-\right)
-=\frac{B_m^2}{n}+1-\frac{m+1}{n},$$
-
-and
-
-$$E\!\left(
-\operatorname{MSE}_{\mathrm{test},m}
-\mid \mathbf X_{\mathrm{all}}
-\right)
-=\frac{B_m^2}{n}+1+\frac{m+1}{n}.$$
+$$\begin{aligned}
+E\!\left(\operatorname{MSE}_{\mathrm{train},m}\mid\mathbf X_{\mathrm{all}}\right)
+&=\frac{B_m^2}{n}+1-\frac{m+1}{n},
+&\qquad
+E\!\left(\operatorname{MSE}_{\mathrm{test},m}\mid\mathbf X_{\mathrm{all}}\right)
+&=\frac{B_m^2}{n}+1+\frac{m+1}{n}.
+\end{aligned}$$
 
 Add these expectations to your plot and compare them with the simulation averages.
 
@@ -482,12 +473,16 @@ $$\mathbf H
 
 be its hat matrix. Suppose
 
-$$\mathbf y=\boldsymbol\mu+\boldsymbol\epsilon,
-\qquad
-\mathbf y^*=\boldsymbol\mu+\boldsymbol\epsilon^*,$$
-
-Conditional on the fixed design $\mathbf X$, the two error vectors are independent, have mean zero, and have covariance matrix $\sigma^2\mathbf I_n$. Define
-
+$$\begin{aligned}
+C_p
+&=\frac{\operatorname{RSS}}{\widehat\sigma^2}-n+2(p+1),
+&\qquad
+\operatorname{AIC}^{\mathrm{red}}
+&=n\log\left(\frac{\operatorname{RSS}}{n}\right)+2(p+1),
+&\qquad
+\operatorname{BIC}^{\mathrm{red}}
+&=n\log\left(\frac{\operatorname{RSS}}{n}\right)+(p+1)\log(n).
+\end{aligned}$$
 $$\operatorname{MSE}_{\mathrm{train}}
 =
 \frac{1}{n}
@@ -537,15 +532,13 @@ $$E\!\left(
 
 a.  Derive
 
-$$E(\operatorname{MSE}_{\mathrm{train}}\mid\mathbf X)
-=\frac{B^2}{n}
-+\sigma^2\left(1-\frac{p+1}{n}\right),$$
-
-and
-
-$$E(\operatorname{MSE}_{\mathrm{test}}\mid\mathbf X)
-=\frac{B^2}{n}
-+\sigma^2\left(1+\frac{p+1}{n}\right).$$
+$$\begin{aligned}
+E(\operatorname{MSE}_{\mathrm{train}}\mid\mathbf X)
+&=\frac{B^2}{n}+\sigma^2\left(1-\frac{p+1}{n}\right),
+&\qquad
+E(\operatorname{MSE}_{\mathrm{test}}\mid\mathbf X)
+&=\frac{B^2}{n}+\sigma^2\left(1+\frac{p+1}{n}\right).
+\end{aligned}$$
 
 Substitute y into MSE_train and distribute
 
@@ -618,14 +611,13 @@ c.  Continue with $n=120$ and $p=4$. Suppose the candidate model has residual su
 
 Calculate
 
-$$\widehat{\operatorname{MSE}}_{\mathrm{test}}
-=\frac{
-\operatorname{RSS}+2(p+1)\widehat\sigma^2
-}{n},$$and
-
-$$C_p
-=\frac{\operatorname{RSS}}{\widehat\sigma^2}
--n+2(p+1).$$
+$$\begin{aligned}
+\widehat{\operatorname{MSE}}_{\mathrm{test}}
+&=\frac{\operatorname{RSS}+2(p+1)\widehat\sigma^2}{n},
+&\qquad
+C_p
+&=\frac{\operatorname{RSS}}{\widehat\sigma^2}-n+2(p+1).
+\end{aligned}$$
 
 Show how these two quantities are related, and explain why minimizing $C_p$ is equivalent to minimizing the corrected test MSE when $n$ and $\widehat\sigma^2$ are common to all candidate models.
 
