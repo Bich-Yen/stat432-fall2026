@@ -2362,15 +2362,13 @@ window.Quarto = {
 \mathcal N_n(\mathbf 0,\mathbf I_n).\]</span></p>
 <p>Here <span class="math inline">\(\mathbf I_n\)</span> is the <span class="math inline">\(n\times n\)</span> identity matrix.</p>
 <p>For <span class="math inline">\(m=0,1,\ldots,p\)</span>, fit a linear model with an intercept and the first <span class="math inline">\(m\)</span> columns of <span class="math inline">\(\mathbf X_{\mathrm{all}}\)</span> using <span class="math inline">\(\mathbf y\)</span>. If <span class="math inline">\(\widehat{\mathbf y}_m\)</span> is its fitted mean vector, define</p>
-<p><span class="math display">\[
-\begin{aligned}
+<p><span class="math display">\[\begin{aligned}
 \operatorname{MSE}_{\mathrm{train},m}
 &amp;=\frac{1}{n}\left\lVert\mathbf y-\widehat{\mathbf y}_m\right\rVert_2^2,
 &amp;\qquad
 \operatorname{MSE}_{\mathrm{test},m}
 &amp;=\frac{1}{n}\left\lVert\mathbf y^*-\widehat{\mathbf y}_m\right\rVert_2^2.
-\end{aligned}
-\]</span></p>
+\end{aligned}\]</span></p>
 <p>Repeat this process independently 200 times, keeping <span class="math inline">\(\mathbf X_{\mathrm{all}}\)</span> fixed.</p>
 <p>Use seed <code>43202</code> before generating <span class="math inline">\(\mathbf X_{\mathrm{all}}\)</span> and the response errors. R and Python use different random-number generators, so their exact numerical values need not agree.</p>
 <ol type="a">

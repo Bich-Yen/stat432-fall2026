@@ -47,15 +47,13 @@ Here $\mathbf I_n$ is the $n\times n$ identity matrix.
 
 For $m=0,1,\ldots,p$, fit a linear model with an intercept and the first $m$ columns of $\mathbf X_{\mathrm{all}}$ using $\mathbf y$. If $\widehat{\mathbf y}_m$ is its fitted mean vector, define
 
-$$
-\begin{aligned}
+$$\begin{aligned}
 \operatorname{MSE}_{\mathrm{train},m}
 &=\frac{1}{n}\left\lVert\mathbf y-\widehat{\mathbf y}_m\right\rVert_2^2,
 &\qquad
 \operatorname{MSE}_{\mathrm{test},m}
 &=\frac{1}{n}\left\lVert\mathbf y^*-\widehat{\mathbf y}_m\right\rVert_2^2.
-\end{aligned}
-$$
+\end{aligned}$$
 
 Repeat this process independently 200 times, keeping $\mathbf X_{\mathrm{all}}$ fixed.
 
@@ -482,8 +480,7 @@ C_p
 &\qquad
 \operatorname{BIC}^{\mathrm{red}}
 &=n\log\left(\frac{\operatorname{RSS}}{n}\right)+(p+1)\log(n).
-\end{aligned}$$
-$$\operatorname{MSE}_{\mathrm{train}}
+\end{aligned}$$ $$\operatorname{MSE}_{\mathrm{train}}
 =
 \frac{1}{n}
 \left\lVert
