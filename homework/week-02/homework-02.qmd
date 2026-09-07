@@ -11,6 +11,9 @@ format:
     toc-depth: 2
     code-fold: true
     code-summary: "Show the starter code"
+
+execute:
+  echo: false
 ---
 
 ## Question 1: Training and test error under a fixed design
@@ -69,19 +72,19 @@ set.seed(43202)
 n <- 100
 p <- 20
 sigma <- 1
-X <- matrix(data = rnorm(n * p, mean = 0, sd = 1),
+X_all <- matrix(data = rnorm(n * p, mean = 0, sd = 1),
                 nrow = n, ncol = p)
 covariate_count <- 0:p
 
 # Add the intercept coefficients to the matrix
-X_all <- cbind(1, X)
+X <- cbind(1, X_all)
 
 # Define beta
 j <- 1:p
 beta <- c(0, 0.4 ^ sqrt(j))
 
 # Define mu (dimensions of mu should be n x 1)
-mu <- X_all %*% beta
+mu <- X %*% beta
 
 # Set up empty training and test responses matrices
 nsim <- 200
@@ -90,12 +93,50 @@ test_mse_one <- matrix(NA_real_, nrow = nsim, ncol = p + 1)
 
 for (k in seq_len(nsim)) {
   # Generate training and independent test responses 200 times
-  y_train <- drop(X_all %*% beta) + rnorm(n, sd = sigma)
-  y_test <- drop(X_all %*% beta) + rnorm(n, sd = sigma)
+  y_train <- drop(X %*% beta) + rnorm(n, sd = sigma)
+  y_test <- drop(X %*% beta) + rnorm(n, sd = sigma)
+  
+  # For m = 0:p, fit a linear model with an intercept and the first m columns of X_all using y
+  # matrix[, x] extracts the xth column
+  # drop = FALSE forces R to retain the data structure (https://www.geeksforgeeks.org/r-language/how-to-use-the-drop-function-in-r/)
+  for (m in 1:p){
+    # add y training values and the first m columns of X_all into a data frame
+    train_data <- data.frame(y = y_train, X_all[, 1:m, drop = FALSE])
+    test_data <- data.frame(X_all[, 1:m, drop = FALSE])
+    
+    # Use this response pair for every candidate model in this repetition
+    # m = 0 (when the model only has an intercept is a special case)
+    # y = beta_0 + epsilon
+    # The least-squares estimate of the intercept is the mean training response
+    y_hat <- rep(mean(y_train), n)
+    train_mse_one[k, 1] <- mean((y_train - y_hat)^2)
+    test_mse_one[k, 1] <- mean((y_test - y_hat)^2)
+    
+    # Use the training data to fit a linear model
+    fit <- lm(y ~ ., data = train_data)
+    y_hat <- predict(fit, newdata = test_data)
+    
+    # Define MSE_train,m and MSE_test,m
+    # Matrix[k = simulation run, m + 1 = the model with m predictors and intercept]
+    train_mse_one[k, m + 1] <- mean(residuals(fit)^2)
+    test_mse_one[k, m + 1] <- mean((y_test - y_hat)^2)
+  }
 }
 ```
 
 a.  For each $m$, calculate the average training and test MSE over the 200 simulation runs. Plot both curves against $m$. Verify numerically that training MSE does not increase as predictors are added in each simulation run.
+
+    ```{r}
+    #colMeans() calculates the mean of very column in a dataframe (https://www.geeksforgeeks.org/r-language/how-to-use-colmeans-function-in-r/)
+    mean_train_mse_one <- colMeans(train_mse_one)
+    mean_test_mse_one <- colMeans(test_mse_one)
+
+    # Plot average training MSE and average testing MSE against m
+    train_color <- "#2F6FB3"
+    test_color <- "#C84A16"
+    ```
+
+    Refer to the final graph in part (1c). The difference among the mean training MSE for each simulation run is below 0, which means that the training MSE does not increase as predictors are added in each simulation run.
 
 b.  For the model containing the first $m$ predictors, write
 
@@ -136,7 +177,77 @@ $$E\!\left(
 
 Add these expectations to your plot and compare them with the simulation averages.
 
+```{r}
+# Calculate the approximate bias for each candidate model
+# m = 0 (where there is only the intercept for the model) is a special case
+bias_mse_one <- numeric(p + 1)
+
+# mean square approximation bias when m = 1 (only intercept in model)
+bias_mse_one[1] <- mean((drop(X %*% beta) - mean(X %*% beta))^2)
+
+# Set up Xm with the intercept column first
+Xm <- matrix(1, nrow = n, ncol = 1)
+
+# Set up Bm_square for when the model only has the intercept
+Bm_square <- numeric(p + 1)
+Bm_square[1] <- sum((drop(mu) - mean(mu))^2)
+
+for (m in 1:p){
+  # Define Xm and Hm
+  Xm <- cbind(1, X_all[, 1:m, drop = FALSE])
+  
+  # solve() finds the inverse of a matrix
+  Hm <- Xm %*% solve((t(Xm) %*% Xm)) %*% t(Xm)
+  
+  # Define total squared approximation bias, (Bm)^2
+  Bm_square[m + 1] <- sum(((diag(n) - Hm) %*% mu)^2)
+}
+
+# Define mean squared approximation bias
+mean_square_approx_bias <- Bm_square / n
+
+# Calculate the two theoretical expectations, MSE_train and MSE_test
+theory_train_mse_one <- mean_square_approx_bias + 1 - (covariate_count + 1) / n
+theory_test_mse_one <- mean_square_approx_bias + 1 + (covariate_count + 1) / n
+```
+
+Refer to the final graph in part (1c). The average training MSE is slightly above the expected training MSE whereas the average test MSE is slightly below the expected test MSE.
+
 c.  Add the test MSE curve from one simulation run to the plot. Explain why this single curve is less smooth than the average test MSE. Use the approximation-bias and estimation-variance terms in the expected test MSE to explain why training MSE cannot be used by itself to select the predictor count.
+
+    ```{r}
+    # Add the test MSE curve from one simulation run to the plot
+    plot(x = covariate_count, y = mean_train_mse_one,
+         type = "o", pch = 16, col = train_color, lwd = 2,
+         xlab = "Number of covariates",
+         ylab = "Mean square error",
+         xaxt = "n"
+    )
+    axis(1, at = seq(0, p, by = 2))
+    lines(x = covariate_count, y = theory_train_mse_one,
+          col = train_color, lwd = 2, lty = 2)
+    lines(x = covariate_count, y = mean_test_mse_one,
+          type = "o", pch = 17, col = test_color, lwd = 2)
+    lines(x = covariate_count, y = theory_test_mse_one,
+          col = test_color, lwd = 2, lty = 4)
+    lines(x = covariate_count, y = test_mse_one[1, ],
+          col = "black", lwd = 2, lty = 3)
+    legend(
+      "bottomleft",
+      legend = c("Average training MSE", "Expected training MSE", 
+                 "Average test MSE", "Expected test MSE", 
+                 "Test MSE 1st Run"),
+      col = c(train_color, train_color, test_color, test_color, "black"),
+      lty = c(1, 2, 1, 4, 3),
+      pch = c(16, NA, 17, NA, NA),
+      lwd = 2, 
+      bty = "n",
+      ncol = 2,
+      cex = 0.60
+    )
+    ```
+
+This single curve is less smooth than the average test MSE because the single curve is only based on one training and testing response pair. The randomness, or error, in the response pairs makes the single curve jump. The approximation-bias, $B_m^2/n$, is the error from using too few predictors, and the estimation-variance, $\frac{m + 1}{n}$, is the error from using too many predictors. Training MSE cannot be used by itself to select the predictor count because the training MSE always decreases or stays the same when adding more predictors. Simply adding new predictors does not mean the model can predict new responses well.
 
 ## Question 2: Prediction error at one target point
 
@@ -176,7 +287,7 @@ X_all <- outer(
 
 ### Python
 
-```{python}
+```{python, python.reticulate = FALSE}
 #| eval: false
 import numpy as np
 
@@ -226,7 +337,65 @@ $$E\!\left[
 1+\sum_{j=1}^{m}x_{0j}^2
 \right).$$
 
+```{r}
+n <- 100
+p <- 6
+X_all <- outer(
+  1:n, 1:p,
+  function(i, j) sqrt(2) * cos(pi * j * (i - 0.5) / n)
+)
+
+# Check if the columns of X_all satisfy the two conditions
+cond_1 <- colSums(X_all)
+print("The column sums are very close to 0.")
+
+cond_2 <- (1 / n) * (t(X_all) %*% X_all)
+print("The diagonal elements of are very close to 1.")
+
+# Keep X_all fixed and generate one training response
+# X_all is already fixed when the seed was set in problem 1
+beta2 <- rep(x = 0.5, times = p)
+error2 <- rnorm(n, mean = 0, sd = 1)
+y2 <- X_all %*% beta2 + error2
+```
+
 a.  Calculate $\mu_0$, the theoretical squared bias, and the expected squared error for $m=0,\ldots,p$ using the formula above. **You do not need to derive the formula.** Briefly explain in words why it consists of a squared bias term from omitted predictors and a variance term from estimating coefficients; no proof is required. Identify the values of $m$ where the expected squared error changes and where it remains unchanged.
+
+    ```{r}
+    # Calculate the theoretical squared bias
+    x0 <- c(0, 1, 0, 0, 1, 0)
+    mu0 <- x0 %*% beta2
+
+    # Calculate expected squared error for m = 0, ..., p using the formula above
+    squared_bias <- numeric(p + 1)
+    estimation_variance <- numeric(p + 1)
+
+    for (m in 0:p){
+      if (m < p){
+        squared_bias[m + 1] <- sum(x0[(m + 1):p] * beta2[(m + 1):p])^2
+      } else {
+        squared_bias[m + 1] <- 0
+      }
+      
+      if (m == 0) {
+        estimation_variance[m + 1] <- sigma^2 / n
+      } else {
+        estimation_variance[m + 1] <- sigma^2 / n * (1 + sum(x0[seq_len(m)]^2))
+      }
+    }
+
+    # Determine the expected squared error
+    expected_squared_error <- squared_bias + estimation_variance
+
+    # Identify the values of m where the expected square error changes and where it remains unchanged
+    data.frame(
+      m = 0:p,
+      theoretical_squared_bias = squared_bias,
+      expected_squared_error = squared_bias + estimation_variance
+    )
+    ```
+
+    mu_0 is `r mu0`. The expected squared error has a squared bias term from omitted predictors because the squared bias measures the error from leaving out predictors that matter for x0. The variance term from estimating coefficients is in the expected squared error because the variance comes from fitted coefficients being estimated from random training data (i.e., the error in the training data varies in each simulation run). The expected squared error stays the same between m = 0 and m = 1. The error changes between m = 1 and m = 2 but stays the same between m = 2 through m = 4.
 
 b.  Use seed `43203`. Generate the response, fit the models, and calculate
 
@@ -234,7 +403,73 @@ $$\left(\widehat\mu_{0,m}-\mu_0\right)^2.$$
 
 Repeat this independently 200 times. Plot the simulation averages and theoretical expectations together. Report the smallest $m$ that minimizes the theoretical error.
 
+```{r}
+set.seed(43203)
+
+# Generate the response, fit the models and calculate the residual
+# Reuse part of the code from problem 1
+# Create an empty matrix to store squared errors
+target_squared_error <- matrix(NA_real_, nrow = nsim, ncol = p + 1)
+
+for (k in seq_len(nsim)) {
+  # Generate a training response 200 times
+  y_train2 <- drop(X_all %*% beta2) + rnorm(n, sd = sigma)
+  
+  # For m = 0, ..., p, fit a linear model with an intercept and the first m predictors
+  for (m in 0:p) {
+    # For the model with only an intercept
+    if (m == 0) {
+      Xm <- matrix(1, nrow = n, ncol = 1)
+      x0_m <- 1
+    } else {
+      # Create the design matrix for m
+      Xm <- cbind(1, X_all[, seq_len(m), drop = FALSE])
+      x0_m <- c(1, x0[seq_len(m)])
+    }
+    
+    # Use the training data to fit a linear model
+    fit <- lm.fit(x = Xm, y = y_train2)
+    
+    # Calculate the fitted model's prediction at mu_hat0,m = t(x0_m) * beta_hat
+    mu_hat0_m <- drop(x0_m %*% fit$coefficients)
+    
+    # 
+    target_squared_error[k, m + 1] <- (mu_hat0_m - mu0)^2
+  }
+}
+
+# Calculate simulated averages
+sim_squared_error <- colMeans(target_squared_error)
+
+# Plot the simulation averages and theoretical expectations together
+# Add the test MSE curve from one simulation run to the plot
+plot(x = 0:p, y = sim_squared_error,
+     type = "o", pch = 16, col = train_color, lwd = 2,
+     xlab = "Number of predictors",
+     ylab = "Squared errors",
+     xaxt = "n"
+)
+axis(1, at = seq(0, p, by = 2))
+lines(x = 0:p, y = expected_squared_error,
+      col = test_color, lwd = 2, lty = 2)
+legend(
+  "bottomleft",
+  legend = c("Simulated squared error", "Expected squared error"),
+  col = c(train_color, test_color),
+  lty = c(1, 2),
+  pch = c(16, NA),
+  lwd = 2, 
+  bty = "n",
+  ncol = 2,
+  cex = 0.60
+)
+```
+
+The smallest m that minimizes the theoretical error are m = 5 and m = 6.
+
 c.  All six regression coefficients are nonzero. Explain why only predictors 2 and 5 contribute directly to the mean response at $\mathbf x_0$. Contrast this target-specific error with the test MSE averaged over all rows of $\mathbf X_{\mathrm{all}}$ in Question 1.
+
+    Only predictors 2 and 5 contribute directly to the mean response at x0 because x0 contains 1 at m = 2 and m = 5. This target-specific error measures prediction error at one point, x0. The test MSE averaged over all rows of X_all in Question 1 measures the mean prediction error over all 100 rows of the design matrix.
 
 ## Question 3: The optimism correction
 
@@ -312,6 +547,42 @@ $$E(\operatorname{MSE}_{\mathrm{test}}\mid\mathbf X)
 =\frac{B^2}{n}
 +\sigma^2\left(1+\frac{p+1}{n}\right).$$
 
+Substitute y into MSE_train and distribute
+
+$$\ y - \ Hy = (\ I_n - H)(\mu + \epsilon) = (\ I_n - H)\mu + (\ I_n - H)\epsilon$$
+
+The squared length of the conditional bias vector of the fitted mean is B\^2, the total squared approximation bias. For the error term,
+
+$$E\!\left(
+\boldsymbol\epsilon^{\mathsf T}
+\mathbf A
+\boldsymbol\epsilon
+\mid \mathbf X
+\right)
+=\sigma^2\operatorname{tr}(\mathbf A).$$ where
+
+$$A = (I_n - H)^2 = I_n - H$$
+
+because the square of the hat matrix is the hat matrix itself (H\^2 = H). Therefore,
+
+$$tr(A) = tr(I_n - H) = n - (p + 1)$$
+
+Putting it all together, we get E(MSE_train \| X).
+
+Substitute y and y\* into MSE_test and rearrange
+
+$$y^* - Hy = \mu + \epsilon^* - H(\mu + \epsilon) = (I_n - H)\mu + \epsilon^* - H\epsilon$$
+
+The leftmost term is the total squared approximation bias. We know that the error is
+
+$$E(||\epsilon^*||^2_2) = n\sigma^2$$
+
+The rightmost term can be evaluated to
+
+$$\sigma^2tr(H) = \sigma^2tr(H)=(p+1)\sigma^2$$
+
+Thus, we get E(MSE_test \| X).
+
 b.  Deduce the expected optimism, defined as $E(\operatorname{MSE}_{\mathrm{test}}-\operatorname{MSE}_{\mathrm{train}}\mid\mathbf X)$. For
 
 $$n=120,
@@ -324,6 +595,25 @@ p=4,
 
 calculate the expected training MSE, expected test MSE, and their difference. Explain why the ordering need not hold for every realized pair of responses.
 
+```{r}
+# Set up variables
+n = 120
+p = 4
+mean_square_approx_bias3 <- 0.04
+sigma3 <- 1
+
+expected_train_mse3 <- mean_square_approx_bias3 + sigma3^2 * (1 - (p + 1)/n)
+expected_test_mse3 <- mean_square_approx_bias3 + sigma3^2 * (1 + (p + 1)/n)
+diff_train_test <- expected_train_mse3 - expected_test_mse3
+
+data.frame(
+  label = c("expected training MSE", "expected test MSE", "difference"),
+  value = c(expected_train_mse3, expected_test_mse3, diff_train_test)
+)
+```
+
+The ordering does not need to hold for every realized pair of responses because the expected MSE and test MSE describe the average behavior over many possible samples.
+
 c.  Continue with $n=120$ and $p=4$. Suppose the candidate model has residual sum of squares $\operatorname{RSS}=116.4$, and suppose a common estimate of the error variance is $\widehat\sigma^2=0.96$.
 
 Calculate
@@ -331,9 +621,7 @@ Calculate
 $$\widehat{\operatorname{MSE}}_{\mathrm{test}}
 =\frac{
 \operatorname{RSS}+2(p+1)\widehat\sigma^2
-}{n},$$
-
-and
+}{n},$$and
 
 $$C_p
 =\frac{\operatorname{RSS}}{\widehat\sigma^2}
@@ -341,7 +629,23 @@ $$C_p
 
 Show how these two quantities are related, and explain why minimizing $C_p$ is equivalent to minimizing the corrected test MSE when $n$ and $\widehat\sigma^2$ are common to all candidate models.
 
-## Question 4: Comparing Mallows' $C_p$, AIC, and BIC
+```{r}
+RSS <- 116.4
+var <- 0.96
+
+MSE_test_hat <- (RSS + 2 * (p + 1) * var) / n
+Cp <- (RSS / var) - n + 2 * (p + 1)
+```
+
+MSE_test_hat is `r round(MSE_test_hat, digits = 3)` and Cp is `r round(Cp, digits = 3)`. If we plug in Cp into MSE_test_hat, we get
+
+$$\widehat{\operatorname{MSE}}_{\mathrm{test}}
+=\frac{\sigma^2
+}{n}(C_p + n)= \sigma^2(1 + \frac{C_p}{n})$$
+
+Minimizing Cp is equivalent to minimizing the corrected test MSE when n and sigma\^2 are common to all candidate models because only Cp is changing in the MSE_test_hat formula above. This means as Cp decreases, MSE_test_hat decreases.
+
+## Question 4: Comparing Mallows $C_p$, AIC, and BIC
 
 Use `data/diabetes.csv`, with `y` as the response. Use rows 1 through 370 as the training data, and let $n=370$ denote the training sample size. Do not use rows 371 through 442 in this question. Fit the following ordinary least-squares models, each with an intercept.
 
@@ -375,9 +679,80 @@ The reduced AIC and BIC omit constants shared by the two candidate models. Small
 
 a.  Fit the three models. Report $p$, RSS, the residual degrees of freedom of the full model, and $\widehat\sigma^2$.
 
+    ```{r}
+    # Read the file and use rows 1 through 370 as the training data
+    diabetes <- read.csv("data/diabetes.csv")
+    diabetes_train <- diabetes[1:370, ]
+
+    # Set up values
+    n <- 370
+    p <- p
+
+    # Fit the three models
+    model_A <- lm(y ~ 1 + bmi + bp + s5 + sex + s1 + s2 + s4, data = diabetes_train)
+    model_B <- lm(y ~ 1 + bmi + bp + s5 + sex + s1 + s2 + s4 + s6, data = diabetes_train)
+    model_full <- lm(y ~ 1 + ., data = diabetes_train)
+
+    data.frame(
+      model = c("Model A", "Model B", "Full reference"),
+      predictor = c(length(model_A$coefficients), 
+                    length(model_B$coefficients), 
+                    length(model_full$coefficients)),
+      # deviance() returns the RSS of a fitted model
+      RSS = c(deviance(model_A), deviance(model_B), deviance(model_full))
+    )
+
+    var_full <- deviance(model_full) / (n - (p + 1))
+    ```
+
+    The residual degree of freedom for the full reference model is `r model_full$df.residual`. The variance from the full reference model is `r round(var_full, digits = 3)`.
+
 b.  Calculate $C_p$, reduced AIC, and reduced BIC for Models A and B. State which model each criterion selects. Do not compare numerical values across different criteria.
 
+    ```{r}
+    # Calculate Cp for Models A and B
+    var_A <- deviance(model_A) / (n - (p + 1))
+    Cp_A <- (deviance(model_A) / var_A) - n  + 2 * (p + 1)
+
+    var_B <- deviance(model_B) / (n - (p + 1))
+    Cp_B <- (deviance(model_B) / var_B) - n  + 2 * (p + 1)
+
+    # Calculate reduced AIC for Models A and B
+    red_AIC_A <- n * log(deviance(model_A) / n) + 2 * (p + 1)
+    red_AIC_B <- n * log(deviance(model_B) / n) + 2 * (p + 1)
+
+    # Calculate reduced BIC for Models A and B
+    red_BIC_A <- n * log(deviance(model_A) / n) + (p + 1) * log(n)
+    red_BIC_B <- n * log(deviance(model_B) / n) + (p + 1) * log(n)
+
+    data.frame(
+      models = c("Model A", "Model B"),
+      Cp = c(Cp_A, Cp_B),
+      reduced_AIC = c(red_AIC_A, red_AIC_B),
+      reduced_BIC = c(red_BIC_A, red_AIC_B)
+    )
+    ```
+
+    The Mallows Cp would select either Model A and B because the Cp's for both of the models are the same. Reduced AIC and BIC would select Model B because the reduced AIC and BIC values for Model B is lower than the values from Model A.
+
 c.  Compare the improvement in fit from adding `s6` with the one-parameter penalty under each criterion. Use this comparison to explain any disagreement. Why does selecting a model not establish that it is the true data-generating model?
+
+    ```{r}
+    # Find the difference in RSS between Models A and B
+    diff_RSS <- deviance(model_A) - deviance(model_B)
+
+    # Calculate the penalty for adding one parameter
+    Cp_penalty <- 2 * var_full
+    AIC_penalty <- 2
+    BIC_penalty <- log(n)
+
+    data.frame(
+      Validation = c("Cp", "AIC", "BIC"),
+      Penalty = c(Cp_penalty, AIC_penalty, BIC_penalty)
+    )
+    ```
+
+The difference in the RSS's of Models A and B is `r round(diff_RSS, digits = 3)`. Model B is the preferred model for AIC and BIC, but there is a large penalty for adding a parameter for Cp. Model A is the more likely selection for Cp. Selecting a model does not mean it is the true data-generating model because Cp, AIC, and BIC only use the observed sample data. Model selection is affected by sample variability (or random sampling noise), and different criteria can select other models.
 
 ## Question 5: Validation and final test data
 
@@ -396,9 +771,20 @@ The analyst argues that the procedure is valid because the final test data were 
 
 a.  Identify the first step that misuses the final test data. Explain why the minimum of eleven test MSE values is generally too favorable as an estimate of the selected procedure's future prediction error.
 
+    Step 2 is where the procedure misuses the final testing data because the data is used to evaluate all models before a model is chosen. The final testing data is no longer unbiased because the testing data was apart of the model selection. The minimum of the eleven test MSE values is generally too favorable as an estimate of the selected procedure's future prediction error because random variation may cause one model to be too accurate.
+
 b.  Rewrite the analysis using five-fold cross-validation within the training data. State how the predictor count is selected, what is refitted, and when the final test data may be used.
 
+    1.  Split the training data into 5 random equal subsets.
+    2.  For each of the 11 candidate models, fit the model using 4 of the 5 subset, calculate the MSE from the 1 remaining subset, and repeat the process until each subset has been used to calculate the MSE.
+    3.  Average the five MSE values for each model.
+    4.  Select the model predictors with the smallest MSE.
+    5.  Use the predictors to fit a model with the entire dataset.
+    6.  Use rows 371 to 442 as the final test data to calculate the MSE.
+
 c.  Suppose the analyst has already examined all eleven test MSE values. What can still be reported transparently, and what additional data would be needed for a new final evaluation?
+
+    The analyst can still report the eleven MSEs they calculated, the model they selected, and the final estimate of the prediction error. However, they should state that the final MSE they calculated is optimistic because the final test data was used in the selection of the model. A new, unused data set would be needed for a final evaluation.
 
 ## Reference
 
