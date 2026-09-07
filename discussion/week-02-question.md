@@ -1,5 +1,5 @@
 ---
-id: w02-bpham9-AIC-BIC-model-selection
+id: w02-bpham9-training-test-error
 title: "AIC and BIC model selection"
 author: "Bich-Yen Pham (bpham9)"
 ---
