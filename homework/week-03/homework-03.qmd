@@ -102,8 +102,42 @@ a.  Generate $\mathbf X$ once. Report the correlation between its first two colu
 
     feature_names <- colnames(X_raw)
 
-    # Center each covariate so its average squared value is one.
+    # Center each covariate so its average squared value is one
+    x_bar <- colMeans(X_raw)
+
+    # Subtract the mean of each column from X_raw
+    X <- sweep(x = X_raw, MARGIN = 2, STATS = x_bar, FUN = "-")
+
+    # colMeans(X^2) = (X_raw - x_bar)^2
+    s <- sqrt(colMeans(X^2))
+
+    # Divide X by s
+    X <- sweep(X, MARGIN = 2, STATS = s, FUN = "/")
+
+    beta <- c(1.5, 1.5, 1, 0)
+    mu <- drop(X %*% beta)
+
+    # Save the genuine raw covarites. Each language then performs the stated
+    # centering and standardization before fitting.
+    ridge_data <- data.frame(row_id = seq_len(n), 
+                             X_raw, mu = mu, 
+                             check.names = FALSE
+                             )
+
+    dir.create("data/week-03", recursive = TRUE, showWarnings = FALSE)
+    write.csv(ridge_data, "data/week-03/fixed-x.csv", row.names = FALSE)
+
+    # svd() breaks down any matrix into three simpler matrices
+    singular_values <- svd(X, nu = 0, nv = 0)$d
+    round(c(
+      "Cor(x1, x2)" = cor(X[, 1], X[, 2]),
+      "Largest singular value" = max(singular_values),
+      "Smallest singular value"  = min(singular_values),
+      "Condition number" = (max(singular_values) / min(singular_values))^2
+    ), 3)
     ```
+
+    $X_1$ and $X_2$ are highly correlated, which makes them nearly collinear. Since these two predictors are nearly identical, small changes in the data (due to variability) do not affect the coefficients in the model with $\widehat\beta_1+\widehat\beta_2$ as much. If $\widehat\beta_1$ decreases, then $\widehat\beta_2$ increases and vice versa, but their sum ($\widehat\beta_1+\widehat\beta_2$) remains the same. The estimator contrast $\widehat\beta_1-\widehat\beta_2$ should be much more variable than $\widehat\beta_1+\widehat\beta_2$ because changes in the coefficients (due to random noise or variability) would result in variable differences.
 
 b.  Independently repeat the generation of $\mathbf y$ and $\mathbf y^*$, followed by all three fits, 200 times while keeping $\mathbf X$ fixed. Draw the training and test noise inside each repetition, then reuse that realized pair for all three values of $\lambda$. For each value of $\lambda$, report the empirical mean and standard deviation of
 
@@ -113,9 +147,7 @@ $$\widehat\beta_1,
 \quad
 \widehat\beta_1+\widehat\beta_2,
 \quad
-\widehat\beta_1-\widehat\beta_2.$$
-
-Also report the average training MSE and the average test MSE calculated from the independent test response, where
+\widehat\beta_1-\widehat\beta_2.$$Also report the average training MSE and the average test MSE calculated from the independent test response, where
 
 $$\operatorname{MSE}_{\mathrm{test}}
 =
@@ -128,7 +160,120 @@ $$\operatorname{MSE}_{\mathrm{test}}
 \mathbf X\widehat{\boldsymbol\beta}
 \right\rVert_2^2.$$
 
+```{r}
+lambda_grid <- c(0, 0.02, 0.2)
+repetitions <- 200
+
+# Repeat the experiment. New noise is drawn only when a run begins.
+train_mse_draws <- matrix(NA_real_, 
+                          nrow = repetitions, 
+                          ncol = length(lambda_grid))
+test_mse_draws <- matrix(NA_real_, 
+                          nrow = repetitions, 
+                          ncol = length(lambda_grid))
+
+# Axes index repetitions, coefficients, and penalities.
+# beta_hat[simulation run, coefficients 1-4, which lambda]
+beta_hat <- array(NA_real_, dim = c(repetitions, p, length(lambda_grid)))
+
+# Keep X fixed by not using X inside the loop
+sigma <- 1
+for (k in seq_len(repetitions)) {
+  train_error <- rnorm(n, sd = sigma)
+  test_error <- rnorm(n, sd = sigma)
+  
+  # Generating a training and test response at the same predictor values
+  y_train <- mu + train_error
+  y_test <- mu + test_error
+  y_bar <- mean(y_train)
+  y_centered <- y_train - y_bar
+  
+  # Reuse this run's realized training/test pair across all penalties.
+  for (l in seq_along(lambda_grid)) {
+    lambda <- lambda_grid[l]
+    
+    # Solve for beta_hat at each lambda value
+    beta_hat[k, , l] <- solve(
+      t(X) %*% X + n * lambda * diag(p), t(X) %*% y_centered
+      )
+    
+    # Add training mean back when predicting
+    y_hat <- y_bar + drop(X %*% beta_hat[k, , l])
+    
+    # Store train and test mse inside matrices
+    train_mse_draws[k, l] <- mean((y_train - y_hat)^2)
+    test_mse_draws[k, l] <- mean((y_test - y_hat)^2)
+  }
+  
+}
+
+# Report empirical mean and sd of beta_hats
+beta1_hat_L1m <- mean(beta_hat[, 1, 1])
+beta2_hat_L1m <- mean(beta_hat[, 2, 1])
+
+beta1_hat_L2m <- mean(beta_hat[, 1, 2])
+beta2_hat_L2m <- mean(beta_hat[, 2, 2])
+
+beta1_hat_L3m <- mean(beta_hat[, 1, 3])
+beta2_hat_L3m <- mean(beta_hat[, 2, 3])
+
+beta1_hat_L1s <- sd(beta_hat[, 1, 1])
+beta2_hat_L1s <- sd(beta_hat[, 2, 1])
+
+beta1_hat_L2s <- sd(beta_hat[, 1, 2])
+beta2_hat_L2s <- sd(beta_hat[, 2, 2])
+
+beta1_hat_L3s <- sd(beta_hat[, 1, 3])
+beta2_hat_L3s <- sd(beta_hat[, 2, 3])
+
+sum_beta1_beta2_L1m <- beta1_hat_L1m + beta2_hat_L1m
+sum_beta1_beta2_L2m <- beta1_hat_L2m + beta2_hat_L2m
+sum_beta1_beta2_L3m <- beta1_hat_L3m + beta2_hat_L3m
+
+sum_beta1_beta2_L1s <- sd(beta_hat[, 1, 1] + beta_hat[, 2, 1])
+sum_beta1_beta2_L2s <- sd(beta_hat[, 1, 2] + beta_hat[, 2, 2])
+sum_beta1_beta2_L3s <- sd(beta_hat[, 1, 3] + beta_hat[, 2, 3])
+
+diff_beta1_beta2_L1m <- beta1_hat_L1m - beta2_hat_L1m
+diff_beta1_beta2_L2m <- beta1_hat_L2m - beta2_hat_L2m
+diff_beta1_beta2_L3m <- beta1_hat_L3m - beta2_hat_L3m
+
+diff_beta1_beta2_L1s <- sd(beta_hat[, 1, 1] - beta_hat[, 2, 1])
+diff_beta1_beta2_L2s <- sd(beta_hat[, 1, 2] - beta_hat[, 2, 2])
+diff_beta1_beta2_L3s <- sd(beta_hat[, 1, 3] - beta_hat[, 2, 3])
+
+data.frame(
+  lambda = lambda_grid,
+  
+  # beta1_hat
+  mean_beta1_hat = c(beta1_hat_L1m, beta1_hat_L2m, beta1_hat_L3m),
+  sd_beta1_hat = c(beta1_hat_L1s, beta1_hat_L2s, beta1_hat_L3s),
+  
+  # beta2_hat
+  mean_beta2_hat = c(beta2_hat_L1m, beta2_hat_L2m, beta2_hat_L3m),
+  sd_beta2_hat = c(beta2_hat_L1s, beta2_hat_L2s, beta2_hat_L3s),
+  
+  # beta1_hat + beta2_hat
+  mean_sum_beta1_beta2 = 
+    c(sum_beta1_beta2_L1m, sum_beta1_beta2_L2m, sum_beta1_beta2_L3m),
+  sd_sum_beta1_beta2 =
+    c(sum_beta1_beta2_L1s, sum_beta1_beta2_L2s, sum_beta1_beta2_L3s),
+  
+  # beta1_hat - beta2_hat
+  mean_diff_beta1_beta2 = 
+    c(diff_beta1_beta2_L1m, diff_beta1_beta2_L2m, diff_beta1_beta2_L3m),
+  sd_diff_beta1_beta2 =
+    c(diff_beta1_beta2_L1s, diff_beta1_beta2_L2s, diff_beta1_beta2_L3s),
+  
+  # average training and test mses
+  train_mse = colMeans(train_mse_draws),
+  test_mse = colMeans(test_mse_draws)
+)
+```
+
 c.  Interpret the coefficient estimates and test MSE using bias and variance. Explain why ridge can substantially stabilize the individual coefficients without producing an equally large change in the fitted values.
+
+    The larger the penalty (as $\lambda$ increases), $\hat{\beta_1}$ and $\hat{\beta_2}$ deviate from 1.5, which is the true mean coefficient parameter for the first two predictors. In addition, the ridge pulls the coefficients towards zero as $\lambda$ increases, so their standard deviations decrease (less variance). However, the estimated coefficients may become more biased because they are no longer centered close to their true value of 1.5. Ridge can substantially stabilize the individual coefficients without producing an equally large change in the fitted values because $X_1$ and $X_2$ are nearly identical. $\hat{\beta_1} + \hat{\beta_2}$ is around 3 for all cases of $\lambda$, which means that if one coefficient decreases while the other increases, their effects on the fitted values cancel out. The test MSE fluctuates as $\lambda$ increases because each repetition uses a new, randomly generated test response. There is a bias-variance trade off when penalty increases; a lower penalty correlates to a lower bias but higher variance whereas a higher penalty correlates to a higher bias but lower variance (since the coefficients are pulled towards zero).
 
 ## Question 3: What does ridge regression shrink?
 
@@ -156,6 +301,20 @@ $$\left(
 
 Explain why it has a unique solution whenever $\lambda>0$, even if $\mathbf X$ is rank deficient or $p>n$.
 
+Adapted from Lecture 3 Notes: Understand ridge shrinkage mathematically, differentiate $L_{\lambda}(\beta)$ with respect to $\beta$ and set the gradient to zero
+
+$$-\frac{1}{n}X^T (\widetilde{y} - X\widehat{\beta_{\lambda}}) + \lambda\widehat{\beta_{\lambda}} = 0$$
+
+Distribute $-\frac{1}{n} X^T$, multiply by $n$, and factor out $\widehat{\beta_{\lambda}}$ results in
+
+$$(X^TX + n\lambda I_p)\widehat{\beta_{\lambda}} = X^T\widetilde{y}$$
+
+Solve for $\widehat{\beta_{\lambda}}$
+
+$$\widehat{\beta_{\lambda}} =(X^TX + n\lambda I_p)^{-1} X^T\widetilde{y}$$
+
+The ridge normal equation has a unique solution whenever $\lambda > 0$, even if $X$ is rank deficient or $p > n$ because the added diagonal term makes the matrix invertible. Adding $n\lambda I_p$ puts a positive value on every diagonal direction.
+
 b.  Let
 
 $$\mathbf X
@@ -167,6 +326,18 @@ be a compact singular value decomposition, where $r=\operatorname{rank}(\mathbf 
 $$\rho_j(\lambda)
 =
 \frac{d_j^2}{d_j^2+n\lambda}.$$
+
+Using the definition of $X$, we know that
+
+$$X^T X = (V_r D_r U_r^T)(U_r D_r V_r^T) = V_r D_r^2 V_r^T$$
+
+Pluging $X$ into $\widehat{\beta_{\lambda}}$ results in
+
+$$\widehat{\beta_{\lambda}} = (V_r D_r^2 V_r^T + n\lambda I_p)^{-1} (V_r D_r U_r^T)\widetilde{y} = V_r (D_r^2 + n\lambda I_r)^{-1} D_r U_r^T \widetilde{y}$$
+
+Multiply $X$ and $\widehat{\beta_{\lambda}}$
+
+$$X \widehat{\beta_{\lambda}} = (U_r D_r V_r^T)[V_r (D_r^2 + n\lambda I_r)^{-1} D_r U_r^T \widetilde{y}] = \sum_{j = 1}^{r} \frac{d_j^2}{d_j^2 + n \lambda} u_j u_j^T \widetilde{y}$$
 
 Suppose $n=100$, $\lambda=0.01$, and the nonzero singular values are
 
@@ -182,7 +353,30 @@ $$\operatorname{df}_{\mathrm{eff}}(\lambda)
 =
 1+\sum_{j=1}^3\rho_j(\lambda).$$
 
+```{r}
+n_shrink <- 100
+lambda_shrink <- 0.01
+d <- c(10, 2, 0.2)
+
+# Calculate shrinkage factors
+rho_1 <- d[1]^2 / (d[1]^2 + n_shrink * lambda_shrink)
+rho_2 <- d[2]^2 / (d[2]^2 + n_shrink * lambda_shrink)
+rho_3 <- d[3]^2 / (d[3]^2 + n_shrink * lambda_shrink)
+
+data.frame(
+  rho = c("rho_1", "rho_2", "rho_3"),
+  rho_calc = c(rho_1, rho_2, rho_3)
+)
+
+# Calculate total effective degrees of freedom with the unpenalized intercept
+df_eff <- 1 + sum(c(rho_1, rho_2, rho_3))
+```
+
+The total effective degrees of freedom, including the unpenalized intercept, is `r round(df_eff, digits = 3)`.
+
 c.  Which direction receives the strongest shrinkage? Explain why shrinking this direction can reduce prediction variance. Under what circumstance could the same shrinkage produce substantial prediction bias?
+
+    The third direction, $d_3 = 0.2$, receives the strongest shrinkage because its shrinkage factor is the smallest at `r round(rho_3, digits = 3)`. Shrinking this direction can reduce prediction variance because the data provides little information in that direction, which means that the direction has little influence on the model's prediction (i.e., shrinking reduces sensitivity to random noise). The same shrinkage could produce substantial prediction bias when the weak direction contains real, important information about the response.
 
 ## Question 4: Ridge regression and optimization
 
@@ -201,6 +395,23 @@ $$\mathbf A_\lambda
 \lambda\mathbf I_p.$$
 
 a.  Calculate the condition numbers of $\mathbf A_0$ and $\mathbf A_\lambda$. Explain what the change says about the geometry of the ridge objective.
+
+    The condition number is the ratio of the largest eigenvalue and the smallest eigenvalue.
+
+    ```{r}
+    # k(A) = largest eigenvalue / smallest eigvenvalue
+    k_A0 <- 9 / 0.01
+
+    k_lambda <- 0.09
+    k_Alambda <- (9 + k_lambda) / (0.01 + k_lambda)
+
+    data.frame(
+      A = c("A0", "A_lambda"),
+      Condition_Number = c(k_A0, k_Alambda)
+    )
+    ```
+
+    The condition number decreased from `r k_A0` to `r k_Alambda`. This means that the ridge makes the objective less curved and less elongated.
 
 b.  Gradient descent uses
 
@@ -222,12 +433,48 @@ Show that the component of $\mathbf e^{(k)}$ in an eigendirection with unpenaliz
 
 $$1-\eta(a+\lambda).$$
 
+Since the ridge objective is quadratic, the gradient descent can be written as
+
+$$\nabla L_{\lambda}(\beta) = A_{\lambda} e^{(k)}$$
+
+By subtracting $\widehat{\beta_{\lambda}}$ on both sides of the gradient descent, we get
+
+$$\beta^{(k+1)} - \widehat{\beta_{\lambda}} = \beta^{(k)} - \widehat{\beta_{\lambda}} - \eta \nabla L_{\lambda}(\beta)$$
+
+Substitute in the optimization error to get
+
+$$e^{(k+1)} = e^{(k)} - \eta A_{\lambda} e^{(k)} = (I_p - \eta A_{\lambda}) e^{(k)}$$
+
+In an eigendirection whose unpenalized eigenvalue is $a$, $\mathbf A_\lambda$ has eigenvalue $a+\lambda$. The corresponding error component is therefore multiplied by $1-\eta(a+\lambda)$.
+
 Let $M=9.09$, the largest eigenvalue of $\mathbf A_\lambda$. Find the interval of step sizes that contracts every eigendirection. Then compare these two choices:
 
 - For $\eta=1/M$, calculate the two contraction factors and explain which direction converges faster.
+
+```{r}
+M <- 9.09
+eta_1 <- 1 / M
+
+c_large_1 <- 1 - eta_1 * (9 + k_lambda)
+c_small_1 <- 1 - eta_1 * (0.01 + k_lambda)
+```
+
+For eigenvalues of 9 (strong direction) and 0.01 (weak direction), the contraction factors are `r round(c_large_1, digits = 3)` and `r round(c_small_1, digits = 3)` respectively. The strong direction converges faster because the error disappears in one step whereas the weak direction error decreases slowly.
+
 - For $\eta=2.1/M$, determine whether the method converges. Assume the initial error has a nonzero component in the eigendirection corresponding to $M$.
 
+```{r}
+eta_2.1 <- 2.1 / M
+
+c_large_2.1 <- 1 - eta_2.1 * (9 + k_lambda)
+c_small_2.1 <- 1 - eta_2.1 * (0.01 + k_lambda)
+```
+
+The method does not converge if the absolute value of the contraction factor is greater than 1. In this example, the strong direction has a contraction factor of `r round(c_large_2.1, digits = 3)`. Its magnitude is greater than 1, so the method does NOT converge.
+
 c.  Increasing $\lambda$ generally improves the condition number. Explain why choosing $\lambda$ to make gradient descent converge as quickly as possible is not a valid statistical tuning rule.
+
+    Increasing $\lambda$ generally improves the condition number (makes the optimization more balanced), but it also increases the ridge penalty. This means choosing a greater $\lambda$ shrinks the coefficients towards zero (reduces variance but increases bias). A large penalty makes the optimization run faster, but it may shrink the coefficients too much. The model may make biased predictions.
 
 ## Question 5: Selecting the ridge penalty for real-estate prediction
 
@@ -255,6 +502,193 @@ $$\overline{\operatorname{MSE}}(\lambda)
 +
 \operatorname{SE}(\lambda_{\min}).$$
 
+```{r, warning = FALSE}
+# Read the .csv files
+df_realestate <- read.csv("data/realestate.csv")
+df_split <- read.csv("data/realestate-split-folds.csv")
+
+n_total <- nrow(df_realestate)
+n_test <- sum(df_split$split == "test")
+
+# Match row_id to training or testing data
+train_index <- df_split$row_id[df_split$split == "train"]
+test_index <- df_split$row_id[df_split$split == "test"]
+
+split_shared <- rep("train", n_total)
+split_shared[test_index] <- "test"
+
+# Give the training observations approximately equal fold sizes
+fold_shared <- rep(NA_integer_, n_total)
+fold_shared[train_index] <- sample(
+  rep(seq_len(10), length.out = length(train_index))
+  )
+
+split_folds_shared <- data.frame(
+  row_id = seq_len(n_total),
+  split = split_shared,
+  
+  # Only for training observations
+  # Use for 10-fold cross validation but not for test observations during model selection
+  cv_fold = fold_shared
+)
+
+# Set up penalty grid
+lambda_grid_shared <- c(0, 10^(-4 + 0.05 * (0:120)))
+
+# Use the data, split, folds, and penalty grid generated above
+df_realestate_r <- df_realestate
+split_folds_r <- split_folds_shared
+df_realestate_r$row_id <- seq_len(nrow(df_realestate_r))
+df_realestate_r <- merge(
+  df_realestate_r, split_folds_r, by = "row_id", all.x = TRUE, sort = FALSE
+)
+df_realestate_r <- df_realestate_r[order(df_realestate_r$row_id), ]
+
+feature_names_r <- setdiff(
+  names(df_realestate_r),
+  c("row_id", "price", "split", "cv_fold")
+)
+lambda_grid_r <- lambda_grid_shared
+
+train_rows_r <- df_realestate_r$split == "train"
+test_rows_r <- df_realestate_r$split == "test"
+
+X_train_raw_r <- as.matrix(df_realestate_r[train_rows_r, feature_names_r])
+y_train_raw_r <- df_realestate_r$price[train_rows_r]
+
+X_test_raw_r <- as.matrix(df_realestate_r[test_rows_r, feature_names_r])
+y_test_raw_r <- df_realestate_r$price[test_rows_r]
+
+fold_id_r <- df_realestate_r$cv_fold[train_rows_r]
+
+# Fit ridge on one training sample and return coefficients on original scale
+fit_ridge_model <- function(X_raw, y, lambda){
+  n <- nrow(X_raw)
+  p <- ncol(X_raw)
+  
+  # Standardize predictors
+  x_bar <- colMeans(X_raw)
+  X_centered <- sweep(X_raw, 2, x_bar, "-")
+  s <- sqrt(colMeans(X_centered^2))
+  X <- sweep(X_centered, 2, s, "/")
+  
+  # Center response
+  # Intercept is not penalized
+  y_bar <- mean(y)
+  y_centered <- y - y_bar
+  
+  ridge_matrix <- crossprod(X) + n * lambda * diag(p)
+  
+  # Solve for beta_hat
+  # crossprod(X) = t(X) %*% X
+  beta_hat <- solve(
+    crossprod(X) + n * lambda * diag(p), crossprod(X, y_centered)
+  )
+  
+  beta_hat_raw <- drop(beta_hat) / s
+  raw_intercept <- y_bar - sum(x_bar * beta_hat_raw)
+  y_hat <- raw_intercept + drop(X_raw %*% beta_hat_raw)
+  
+  df_eff <- 1 + sum(diag(X %*% solve(ridge_matrix, t(X))))
+  
+  list(
+    lambda = lambda,
+    beta_hat = drop(beta_hat),
+    intercept = y_bar,
+    beta_hat_raw = beta_hat_raw,
+    intercept_raw = raw_intercept,
+    x_bar = x_bar,
+    s = s,
+    fitted = y_hat,
+    train_mse = mean((y - y_hat)^2),
+    df_eff = df_eff
+  )
+}
+
+predict_ridge <- function(fit, X_new_raw){
+  drop(fit$intercept_raw + X_new_raw %*% fit$beta_hat_raw)
+}
+
+# Refit preprocessing and ridge inside each cross-validation training sample
+fold_levels <- sort(unique(fold_id_r))
+fold_mse <- matrix(NA_real_, 
+                   nrow = length(fold_levels), 
+                   ncol = length(lambda_grid_shared)
+                   )
+validation_n <- integer(length(fold_levels))
+
+for (k in seq_along(fold_levels)){
+  fold <- fold_levels[k]
+  validation <- fold_id_r == fold
+  validation_n[k] <- sum(validation)
+  
+  X_fold_train_raw <- X_train_raw_r[!validation, , drop = FALSE]
+  X_fold_validation_raw <- X_train_raw_r[validation, , drop = FALSE]
+  
+  y_fold_train <- y_train_raw_r[!validation]
+  y_fold_validation <- y_train_raw_r[validation]
+  
+  for (l in seq_along(lambda_grid_r)){
+    lambda <- lambda_grid_r[l]
+    
+    fit <- fit_ridge_model(
+      X_raw = X_fold_train_raw,
+      y = y_fold_train,
+      lambda = lambda
+    )
+    
+    y_validation_hat <- predict_ridge(fit, X_fold_validation_raw)
+    
+    fold_mse[k, l] <- mean((y_fold_validation - y_validation_hat)^2)
+  }
+}
+
+# Apply minimum error and one standard error rules to fold errors
+mean_cv_mse <- colMeans(fold_mse)
+se_cv_mse <- apply(fold_mse, 2, sd) / sqrt(10)
+minimum_index <- which.min(mean_cv_mse)
+one_se_threshold <- mean_cv_mse[minimum_index] + se_cv_mse[minimum_index]
+eligible <- which(mean_cv_mse <= one_se_threshold + 1e-12)
+one_se_index <- eligible[which.max(lambda_grid_r[eligible])]
+lambda_min <- lambda_grid_r[minimum_index]
+lambda_1se <- lambda_grid_r[one_se_index]
+
+cv_summary <- data.frame(
+  lambda = lambda_grid_r,
+  mean_validation_mse = mean_cv_mse,
+  se_lambda = se_cv_mse
+)
+
+# Plot mean validation MSE
+plot(cv_summary$lambda, cv_summary$mean_validation_mse,
+     type = "b",
+     log = "x",
+     xlab = "log_10(lambda)",
+     ylab = "Mean validation MSE",
+     main = "Ten-fold cross validation")
+
+abline(
+  v = lambda_min,
+  col = "red",
+  lty = 2
+)
+
+abline(
+  v = lambda_1se,
+  col = "blue",
+  lty = 2
+)
+
+legend(
+  "bottomleft",
+  legend = c("lambda_min", "lambda_1se"),
+  col = c("red", "blue"),
+  lty = 2
+)
+```
+
+$\lambda_{min}$ is `r lambda_min` (minimum CV error penalty). $\lambda_{1se}$ is `r round(lambda_1se, digits = 3)` (one standard error penalty).
+
 b.  Use all $n=332$ training observations to calculate the [lecture's GCV criterion](https://teazrq.github.io/stat432rpy/topics/ridge-regression/optimization-and-cross-validation.html#loocv-and-gcv) for each $\lambda\in\Lambda$:
 
 $$\operatorname{GCV}(\lambda)
@@ -269,7 +703,112 @@ $$\operatorname{GCV}(\lambda)
 
 Here $\operatorname{MSE}_{\mathrm{train}}$ is the training MSE, and $\operatorname{df}_{\mathrm{eff}}$ includes the unpenalized intercept, as in Question 3. Estimate means and scales once from all training observations and keep them fixed for this calculation. Plot the GCV curve and identify $\lambda_{\mathrm{GCV}}$.
 
+```{r, warning = FALSE}
+gcv_results <- data.frame(
+  lambda = lambda_grid_r,
+  train_mse = NA_real_,
+  df_eff = NA_real_,
+  gcv = NA_real_
+)
+
+n_train <- nrow(X_train_raw_r)
+
+for (l in seq_along(lambda_grid_r)){
+  fit <- fit_ridge_model(
+    X_raw = X_train_raw_r,
+    y = y_train_raw_r,
+    lambda = lambda_grid_r[l]
+  )
+  
+  gcv_results$train_mse[l] <- fit$train_mse
+  gcv_results$df_eff[l] <- fit$df_eff
+
+  # Calcualte GCV(lambda)
+  gcv_results$gcv[l] <- fit$train_mse / (1 - fit$df_eff / n_train)^2
+} 
+
+gcv_min_index <- which.min(gcv_results$gcv)
+lambda_gcv <- gcv_results$lambda[gcv_min_index]
+
+# Plot GCV curve
+plot(gcv_results$lambda, gcv_results$gcv,
+     type = "b",
+     log = "x",
+     xlab = "log10(lambda)",
+     ylab = "GCV",
+     main = "GCV curve"
+)
+
+abline(
+  v = max(lambda_gcv, 1e-5),
+  col = "red",
+  lty = 2
+)
+
+legend(
+  "topleft",
+  legend = "lambda_GCV",
+  col = "red",
+  lty = 2
+)
+```
+
+$\lambda_{GCV}$ is `r round(lambda_gcv, digits = 3)`.
+
 c.  Fix all three choices before examining the test responses. Refit OLS and ridge at $\lambda_{\min}$, $\lambda_{\mathrm{1se}}$, and $\lambda_{\mathrm{GCV}}$ using all training observations. Report each model's training MSE, test MSE, and effective degrees of freedom. Interpret the differences and explain why the model with the smallest observed test MSE must not be selected after viewing this table.
+
+```{r}
+selected_lambdas <- c(
+  OLS = 0,
+  lambda_min = lambda_min,
+  lambda_1se = lambda_1se,
+  lambda_GCV = lambda_gcv
+)
+
+# Fit all three choices using all training observations
+final_fit <- lapply(
+  selected_lambdas,
+  function(lambda){
+    fit_ridge_model(
+      X_raw = X_train_raw_r,
+      y = y_train_raw_r,
+      lambda = lambda
+    )
+  }
+)
+
+# Predict the final test set
+final_results <- data.frame(
+  model = names(selected_lambdas),
+  lambda = as.numeric(selected_lambdas),
+  train_mse = vapply(
+    final_fit,
+    function(fit) fit$train_mse,
+    numeric(1)
+  ),
+  test_mse = vapply(
+    final_fit,
+    function(fit){
+      y_test_hat <- predict_ridge(fit, X_test_raw_r)
+      mean((y_test_raw_r - y_test_hat)^2)
+    },
+    numeric(1)
+  ),
+  df_eff = vapply(
+    final_fit,
+    function(fit) fit$df_eff,
+    numeric(1)
+  )
+)
+
+final_results
+```
+
+OLS has the smallest training MSE because it has no penalty. Ridge regression adds a penalty that shrinks the coefficients, which makes the training MSE slightly larger and the effective degrees of freedom smaller. However, ridge regression may improve predictions by reducing overfitting.
+
+The model with the smallest observed test MSE must not be selected after viewing the table because choosing the model would turn the test set into another validation set.
+
+Training MSE measures fit to observed data, test MSE measures final performance on predicted data, cross-validation and GCV selects the model, and the test set evaluates the choice (it should not be the criteria to choose a model).
 
 ::: {.callout-tip title="Starter workflow"}
 After matching the two files by `row_id`, use this order:
@@ -288,3 +827,13 @@ only then refit the four reported models and evaluate the test responses
 ## Reference
 
 The real-estate data come from I-Cheng Yeh's [Real Estate Valuation dataset](https://archive.ics.uci.edu/dataset/477/real%2Bestate%2Bvaluation%2Bda) in the UCI Machine Learning Repository. The distributed data retain the original observations and add only the course train-test and fold assignments.
+
+# **explain-to-me skill**
+
+1.  Read the specific homework question carefully.
+2.  Explain the goal of the question in plain language.
+3.  Clarify what work is required to complete the question.
+4.  Point to the appropriate section of the Week 3 lectures: [Ridge Regression: Stability Through Shrinkage](https://teazrq.github.io/stat432rpy/topics/ridge-regression/ridge-regression.html) or [From a Penalized Objective to a Fitted Ridge Model](https://teazrq.github.io/stat432rpy/topics/ridge-regression/optimization-and-cross-validation.html). Do not simply link the two lectures.
+5.  Ask whether the student wants clarification about a particular step.
+
+Do not complete calculations, provide the final answer, or generate code unless the student asks for it.
