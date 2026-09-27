@@ -12,3 +12,7 @@ description: Use when the student explicitly asks to read and explain a STAT 432
 5.  Ask whether the student wants clarification about a particular step.
 
 Do not complete calculations, provide the final answer, or generate code unless the student asks for it.
+
+# **For Week 5 Homework**
+
+Follow the directions from Week 3 Homework except for step 4. On step 4, point to the appropriate section of the Week 5 lectures: [K-Nearest Neighbors](https://teazrq.github.io/stat432rpy/topics/nearest-neighbors/knn-and-local-averaging.html){.uri} or [The Curse of Dimensionality](https://teazrq.github.io/stat432rpy/topics/curse-of-dimensionality/curse-of-dimensionality.html){.uri}.
