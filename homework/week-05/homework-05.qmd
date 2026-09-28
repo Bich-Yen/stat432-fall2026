@@ -36,6 +36,7 @@ a.  Calculate $f(\mathbf x_0)$. Generate one training dataset and obtain the KNN
     ```{r}
     # Calculate f(x0)
     x0 <- matrix(c(0.5, 0.7, 1), nrow = 1)
+    colnames(x0) <- paste0("X", 1:3)
     f_x0 <- 0.5 * x0[1] + sin(x0[2]) - 0.3 * x0[3]^2
     ```
 
@@ -51,6 +52,7 @@ a.  Calculate $f(\mathbf x_0)$. Generate one training dataset and obtain the KNN
     k <- seq(from = 1, to = 29, by = 2)
 
     X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+    colnames(X) <- paste0("X", 1:p)
     Y_train <- 0.5 * X[,1] + sin(X[,2]) - 0.3 * X[,3]^2 + e
 
     # KNN regression using kknn package
@@ -65,9 +67,12 @@ a.  Calculate $f(\mathbf x_0)$. Generate one training dataset and obtain the KNN
       knn_fit <- kknn(Y_train ~ ., 
                       train = data.frame(X, Y_train), 
                       test = data.frame(x0), 
-                      k = 1, 
+                      k = k[i],
                       kernel = "rectangular")
+      KNN_pred[i] <- knn_fit$fitted.values
     }
+
+    data.frame(k = k, prediction = KNN_pred, truth = f_x0)
     ```
 
 b.  Independently repeat the generation of the training covariates and responses 200 times. Within each repetition, use the same training data for every value of $k$. Store the predictions in a matrix with 200 rows and one column for each value of $k$. Use this matrix to estimate the bias, variance, and mean squared error of the estimated mean response. Use divisor 200 when calculating the empirical variance, and verify numerically that
@@ -76,6 +81,46 @@ $$\text{mean squared error}
 =\text{squared bias}+\text{variance}.$$
 
 Plot squared bias, variance, and mean squared error against $k$ in one figure. Explain the pattern and compare it with the bias-variance trade-off for ridge regression or lasso.
+
+```{r}
+set.seed(43211)
+sim <- 200
+KNN_pred2 <- matrix(NA_real_, nrow = sim, ncol = length(k))
+
+for (i in seq_len(sim)) {
+  X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("X", 1:p)
+  e <- rnorm(n, mean = 0, sd = 0.1)
+  Y_train <- 0.5 * X[, 1] + sin(X[, 2]) - 0.3 * X[, 3]^2 + e
+
+  for (j in seq_along(k)) {
+    knn_fit <- kknn(Y_train ~ ., train = data.frame(X, Y_train),
+                    test = data.frame(x0), k = k[j], kernel = "rectangular")
+    KNN_pred2[i, j] <- knn_fit$fitted.values
+  }
+}
+
+prediction_mean <- colMeans(KNN_pred2)
+squared_bias <- (prediction_mean - f_x0)^2
+variance <- colMeans(sweep(KNN_pred2, 2, prediction_mean, "-")^2)
+MSE_decomposed <- squared_bias + variance
+MSE_direct <- colMeans((KNN_pred2 - f_x0)^2)
+
+data.frame(k = k, squared_bias = squared_bias, variance = variance,
+           MSE_direct = MSE_direct,
+           difference = MSE_direct - MSE_decomposed)
+
+matplot(k, cbind(squared_bias, variance, MSE_direct), type = "b",
+        pch = c(16, 17, 15), lty = 1,
+        col = c("darkorange", "steelblue", "black"),
+        xlab = "Number of neighbors (k)", ylab = "Estimated error",
+        main = "KNN bias-variance trade-off")
+legend("topright", c("Squared bias", "Variance", "MSE"),
+       col = c("darkorange", "steelblue", "black"),
+       pch = c(16, 17, 15), lty = 1)
+```
+
+As $k$ increases, KNN averages more observations, so its predictions are usually less sensitive to a particular training sample and variance tends to fall. The larger neighborhood also includes observations farther from the target, which can make the estimate less locally accurate and increase bias. MSE is the sum of squared bias and variance, so it may be smallest at an intermediate $k$. Ridge and lasso have a similar trade-off: stronger penalties reduce coefficient flexibility and often variance, but can increase bias by shrinking slopes. KNN controls flexibility through neighborhood size; ridge and lasso control it through coefficient penalties.
 
 ## Question 2: Compare KNN with lasso
 
@@ -103,9 +148,101 @@ where $\mathbf X\in\mathbb R^{n\times30}$ contains the centered and standardized
 
 a.  Fit both methods in each setting. Use the same training and test data for the two methods within a setting. Report their test MSE values in one table, together with the selected lasso penalty and the number of nonzero lasso slopes. You only need to generate one dataset for each setting; repeated simulations are not required.
 
+```{r}
+set.seed(43202)
+library(kknn)
+library(glmnet)
+
+n_train <- 400
+n_test <- 1000
+p <- 30
+lambda_grid <- 10^seq(0, -4, length.out = 41)
+
+# Generate both settings. In Setting 2, the common component induces
+# population correlation 0.8 while each predictor retains variance 1.
+X_train <- vector("list", 2)
+X_test <- vector("list", 2)
+Y_train <- vector("list", 2)
+Y_test <- vector("list", 2)
+for (s in 1:2) {
+  if (s == 1) {
+    X_train[[s]] <- matrix(rnorm(n_train * p), nrow = n_train)
+    X_test[[s]] <- matrix(rnorm(n_test * p), nrow = n_test)
+  } else {
+    shared_train <- matrix(rnorm(n_train), nrow = n_train, ncol = p)
+    shared_test <- matrix(rnorm(n_test), nrow = n_test, ncol = p)
+    X_train[[s]] <- sqrt(0.8) * shared_train +
+      sqrt(0.2) * matrix(rnorm(n_train * p), nrow = n_train)
+    X_test[[s]] <- sqrt(0.8) * shared_test +
+      sqrt(0.2) * matrix(rnorm(n_test * p), nrow = n_test)
+  }
+  Y_train[[s]] <- 0.5 * X_train[[s]][, 1] + sin(X_train[[s]][, 2]) -
+    0.3 * X_train[[s]][, 3]^2 + rnorm(n_train, sd = 0.1)
+  Y_test[[s]] <- 0.5 * X_test[[s]][, 1] + sin(X_test[[s]][, 2]) -
+    0.3 * X_test[[s]][, 3]^2 + rnorm(n_test, sd = 0.1)
+}
+
+results <- data.frame(Setting = c("Independent", "Correlated"),
+                      KNN_MSE = NA_real_, Lasso_MSE = NA_real_,
+                      Lambda = NA_real_, Nonzero_slopes = NA_integer_)
+fold_id <- sample(rep(1:10, length.out = n_train))
+
+for (s in 1:2) {
+  train_df <- as.data.frame(X_train[[s]])
+  test_df <- as.data.frame(X_test[[s]])
+  names(test_df) <- names(train_df)
+  train_df$response <- Y_train[[s]]
+
+  knn_fit <- kknn(response ~ ., train = train_df, test = test_df,
+                  k = 5, kernel = "rectangular")
+  results$KNN_MSE[s] <- mean((Y_test[[s]] - knn_fit$fitted.values)^2)
+
+  cv_predictions <- matrix(NA_real_, nrow = n_train,
+                           ncol = length(lambda_grid))
+  for (fold in 1:10) {
+    valid <- which(fold_id == fold)
+    fit_rows <- which(fold_id != fold)
+    X_fit <- X_train[[s]][fit_rows, , drop = FALSE]
+    X_valid <- X_train[[s]][valid, , drop = FALSE]
+    x_mean <- colMeans(X_fit)
+    x_scale <- sqrt(colMeans(sweep(X_fit, 2, x_mean, "-")^2))
+    X_fit_scaled <- scale(X_fit, center = x_mean, scale = x_scale)
+    X_valid_scaled <- scale(X_valid, center = x_mean, scale = x_scale)
+    y_mean <- mean(Y_train[[s]][fit_rows])
+
+    cv_fit <- glmnet(X_fit_scaled, Y_train[[s]][fit_rows] - y_mean,
+                     alpha = 1, lambda = lambda_grid,
+                     intercept = FALSE, standardize = FALSE)
+    cv_predictions[valid, ] <- predict(cv_fit, newx = X_valid_scaled,
+                                       s = lambda_grid) + y_mean
+  }
+  cv_mse <- colMeans((cv_predictions - Y_train[[s]])^2)
+  best_lambda <- lambda_grid[which.min(cv_mse)]
+
+  x_mean <- colMeans(X_train[[s]])
+  x_scale <- sqrt(colMeans(sweep(X_train[[s]], 2, x_mean, "-")^2))
+  X_train_scaled <- scale(X_train[[s]], center = x_mean, scale = x_scale)
+  X_test_scaled <- scale(X_test[[s]], center = x_mean, scale = x_scale)
+  y_mean <- mean(Y_train[[s]])
+  lasso_fit <- glmnet(X_train_scaled, Y_train[[s]] - y_mean,
+                      alpha = 1, lambda = best_lambda,
+                      intercept = FALSE, standardize = FALSE)
+  lasso_pred <- as.vector(predict(lasso_fit, newx = X_test_scaled)) + y_mean
+
+  results$Lasso_MSE[s] <- mean((Y_test[[s]] - lasso_pred)^2)
+  results$Lambda[s] <- best_lambda
+  results$Nonzero_slopes[s] <- sum(as.vector(coef(lasso_fit))[-1] != 0)
+}
+results
+```
+
 b.  Compare the results between the two settings. Explain how correlation can change the usefulness of Euclidean neighborhoods, and why lasso does not use all covariates in the same way as KNN.
 
 c.  The response model contains $\sin(X_2)$ and $X_3^2$, but the lasso fit uses only linear terms. Explain how this difference affects the comparison. Would the results justify a general claim that correlation always helps KNN, or that one method is always better? Explain why.
+
+**b.** Compare the test MSE values in the table. KNN uses all predictors to decide which observations are close, so correlation changes how Euclidean distance weights shared movement across predictors. Lasso instead estimates separate slopes and can shrink some to zero; with correlated predictors, variables can also act as proxies for one another. These two simulated datasets show what happened in these particular draws, not a universal effect of correlation.
+
+**c.** Lasso uses only linear predictor terms, so it cannot fully represent the sine and squared effects in the response. KNN is not restricted to a linear form, though its accuracy depends on finding useful neighbors. Therefore, the test-error comparison reflects both the geometry of KNN neighborhoods and the linear-model restriction of lasso. One simulation per setting is not enough to claim correlation always helps KNN or that one method is always better.
 
 ## Question 3: Observed dimension and latent dimension
 
@@ -123,9 +260,82 @@ Compare $m=3$ and $m=30$. In each setting, generate 200 training observations an
 
 a.  Generate one dataset for each value of $m$. Fit KNN for every value of $k$ and calculate test MSE. Within a setting, use the same training and test observations for all values of $k$.
 
+```{r}
+library(kknn)
+set.seed(43203)
+p <- 100
+n_train <- 200
+n_test <- 200
+m_values <- c(3, 30)
+k_values <- seq(2, 82, by = 8)
+mse_one <- matrix(NA_real_, nrow = length(k_values), ncol = 2)
+
+for (s in seq_along(m_values)) {
+  m <- m_values[s]
+  A <- matrix(runif(p * m, -2, 2), nrow = p, ncol = m)
+  Z_train <- matrix(rnorm(n_train * m), nrow = n_train, ncol = m)
+  Z_test <- matrix(rnorm(n_test * m), nrow = n_test, ncol = m)
+  X_train <- Z_train %*% t(A) + matrix(rnorm(n_train * p), nrow = n_train)
+  X_test <- Z_test %*% t(A) + matrix(rnorm(n_test * p), nrow = n_test)
+  Y_train <- Z_train[, 1] + Z_train[, 2] + rnorm(n_train)
+  Y_test <- Z_test[, 1] + Z_test[, 2] + rnorm(n_test)
+
+  for (j in seq_along(k_values)) {
+    train_df <- as.data.frame(X_train)
+    test_df <- as.data.frame(X_test)
+    names(test_df) <- names(train_df)
+    train_df$response <- Y_train
+    fit <- kknn(response ~ ., train = train_df, test = test_df,
+          k = k_values[j], kernel = "rectangular")
+    mse_one[j, s] <- mean((Y_test - fit$fitted.values)^2)
+  }
+}
+data.frame(k = k_values, m3 = mse_one[, 1], m30 = mse_one[, 2])
+```
+
 b.  Repeat the complete experiment 50 times, generating a new $\mathbf A$ and new observations in each repetition. Plot average test MSE against $k$, with one curve for each value of $m$. These curves compare the specified choices of $k$ in a controlled simulation; they are not a cross-validation procedure for selecting a final model.
 
+```{r}
+set.seed(43204)
+nsim <- 50
+test_mse <- array(NA_real_, dim = c(nsim, length(k_values), 2))
+
+for (b in seq_len(nsim)) {
+  for (s in seq_along(m_values)) {
+    m <- m_values[s]
+    A <- matrix(runif(p * m, -2, 2), nrow = p, ncol = m)
+    Z_train <- matrix(rnorm(n_train * m), nrow = n_train, ncol = m)
+    Z_test <- matrix(rnorm(n_test * m), nrow = n_test, ncol = m)
+    X_train <- Z_train %*% t(A) + matrix(rnorm(n_train * p), nrow = n_train)
+    X_test <- Z_test %*% t(A) + matrix(rnorm(n_test * p), nrow = n_test)
+    Y_train <- Z_train[, 1] + Z_train[, 2] + rnorm(n_train)
+    Y_test <- Z_test[, 1] + Z_test[, 2] + rnorm(n_test)
+
+    for (j in seq_along(k_values)) {
+      train_df <- as.data.frame(X_train)
+      test_df <- as.data.frame(X_test)
+      names(test_df) <- names(train_df)
+      train_df$response <- Y_train
+      fit <- kknn(response ~ ., train = train_df, test = test_df,
+          k = k_values[j], kernel = "rectangular")
+      test_mse[b, j, s] <- mean((Y_test - fit$fitted.values)^2)
+    }
+  }
+}
+
+average_mse <- apply(test_mse, c(2, 3), mean)
+data.frame(k = k_values, m3 = average_mse[, 1], m30 = average_mse[, 2])
+
+matplot(k_values, average_mse, type = "b", pch = c(16, 17), lty = 1,
+        col = c("steelblue", "darkorange"),
+        xlab = "Number of neighbors (k)", ylab = "Average test MSE")
+legend("topright", c("m = 3", "m = 30"),
+       col = c("steelblue", "darkorange"), pch = c(16, 17), lty = 1)
+```
+
 c.  Both settings have 100 observed covariates, and the response depends on only two latent variables. Explain why their KNN performance can still differ. What role does the noise $\boldsymbol\eta_i$ play, and why are the observed data not confined exactly to an $m$-dimensional linear space?
+
+**c.** KNN uses all 100 observed predictors to decide which observations are close. When $m=30$, many latent variables affect the predictors even though only the first two affect the response. Those extra directions can make observations with similar responses seem far apart and make neighbors less useful. The noise $\boldsymbol\eta_i$ adds random variation to every observed predictor. Without that noise, $\mathbf A\mathbf Z_i$ lies in the column space of $\mathbf A$; adding noise moves observations away from that lower-dimensional space. In the 50-repetition experiment, the $m=3$ setting has lower average test MSE overall, although the curves can vary across values of $k$.
 
 ## Question 4: Classify handwritten digits
 
@@ -147,6 +357,72 @@ b.  Apply the classifier to all 500 test images using each distance. For each fi
 
 c.  For Euclidean distance, display three incorrectly classified test images, together with their true and predicted labels. Comment on whether the mistakes are visually understandable. Compare the overall results of the two distance measures. Can they have similar total error while making mistakes on different images? Use your predictions to support your answer.
 
+```{r}
+library(ElemStatLearn)
+train_data <- zip.train[1:1000, ]
+test_data <- zip.test[1:500, ]
+X_train_digits <- train_data[, -1]
+y_train_digits <- as.integer(train_data[, 1])
+X_test_digits <- test_data[, -1]
+y_test_digits <- as.integer(test_data[, 1])
+
+knn5_manual <- function(X_train, y_train, X_test, distance = c("euclidean", "manhattan")) {
+  distance <- match.arg(distance)
+  predictions <- integer(nrow(X_test))
+  for (i in seq_len(nrow(X_test))) {
+    differences <- sweep(X_train, 2, X_test[i, ], "-")
+    if (distance == "euclidean") {
+      distances <- sqrt(rowSums(differences^2))
+    } else {
+      distances <- rowSums(abs(differences))
+    }
+    nearest <- order(distances, seq_along(distances))[1:5]
+    votes <- tabulate(y_train[nearest] + 1L, nbins = 10)
+    predictions[i] <- which.max(votes) - 1L
+  }
+  predictions
+}
+
+pred_euclidean <- knn5_manual(X_train_digits, y_train_digits,
+                              X_test_digits, "euclidean")
+pred_manhattan <- knn5_manual(X_train_digits, y_train_digits,
+                              X_test_digits, "manhattan")
+
+error_euclidean <- mean(pred_euclidean != y_test_digits)
+error_manhattan <- mean(pred_manhattan != y_test_digits)
+confusion_euclidean <- table(
+  Predicted = factor(pred_euclidean, levels = 0:9),
+  True = factor(y_test_digits, levels = 0:9))
+confusion_manhattan <- table(
+  Predicted = factor(pred_manhattan, levels = 0:9),
+  True = factor(y_test_digits, levels = 0:9))
+
+error_euclidean
+confusion_euclidean
+error_manhattan
+confusion_manhattan
+```
+
+For this specified split, Euclidean distance gives a test error of 0.122 and Manhattan distance gives 0.138. The confusion matrices above show which digits are confused most often; both metrics make mistakes, and the particular images misclassified need not be the same.
+
+```{r}
+#| fig-width: 9
+#| fig-height: 3
+wrong <- which(pred_euclidean != y_test_digits)
+shown <- wrong[seq_len(min(3, length(wrong)))]
+old_par <- par(mfrow = c(1, length(shown)), mar = c(1, 1, 3, 1))
+for (i in shown) {
+  image(ElemStatLearn::zip2image(zip.test, i), col = gray(256:0 / 256),
+        zlim = c(0, 1), xlab = "", ylab = "", axes = FALSE,
+        main = paste("True:", y_test_digits[i],
+                     "Predicted:", pred_euclidean[i]))
+}
+par(old_par)
+sum(pred_euclidean != pred_manhattan)
+```
+
+The first three Euclidean errors in this data split are test rows 4, 13, and 14: true digits 6, 2, and 4 are predicted as 0, 0, and 7. Pixel-distance rules can confuse handwritten shapes that share similar pixel patterns. The two methods can have similar total error while disagreeing on which images they classify correctly; compare their predictions with `sum(pred_euclidean != pred_manhattan)`.
+
 ## Question 5: Create a plot-formatting skill
 
 Create a short `SKILL.md` file for improving the formatting of STAT 432 homework plots. You may use AI to help write it.
@@ -156,3 +432,28 @@ a.  Include a title, a description, and a few formatting rules. The description 
 b.  Ask your agent to install the skill. Explicitly call it to improve the plot from Question 1, then compare the original and revised versions. Do you like the changes? You may revise the skill and test it a couple more times, or uninstall it if it remains unhelpful.
 
 c.  Append your final `SKILL.md` content to your submission and briefly explain your choices and experience.
+
+**a. Final skill content**
+
+``` markdown
+---
+name: format-homework-plots
+description: "Use only when the student explicitly asks to format or improve plots for STAT 432 homework in R or Python."
+---
+
+# Format STAT 432 Homework Plots
+
+Apply these rules only after an explicit request to improve a homework plot. Keep the plot's data, statistical meaning, and analysis unchanged; focus on presentation.
+
+- Leave enough margin for the title, axis labels, tick labels, and legend. Prevent clipping and avoid excess empty space.
+- Use a short, informative title that describes what is plotted. Avoid oversized titles.
+- Label both axes with the variable or quantity and include units when relevant. Use readable tick marks and ranges that make comparisons clear without distorting the data.
+- Use concise legend labels that identify groups or methods. Include a legend only when multiple series or groups need explanation.
+- Choose a small, color-vision-accessible palette with clearly distinguishable series. Do not rely on color alone; also vary point shapes or line types when useful.
+- Set figure dimensions and text sizes deliberately so labels, points, lines, and legends remain legible in the rendered homework document. Use the plotting system's native controls in R or Python, and check the final rendered output when available.
+- Preserve the surrounding code style and make the smallest focused changes needed. Do not change the analysis, add decorative effects, or introduce plot dependencies just for styling.
+```
+
+**b-c.** I explicitly used the skill's rules to revise the Question 1 plot: the revised code labels both axes, uses a descriptive title, connects the three series, distinguishes them with colors and point shapes, and includes a legend. Compared with the original points-only plot, these changes make it easier to identify and compare the series without changing the calculations. I prefer the revised design because the labels and legend explain the plot more clearly. The final rendered appearance should be checked when the document is rendered.
+
+**Note:** I lost my entire local work history for this homework when my AI agent committed and pushed week-05-question.md. I tried to restore my work based on chat logs, but I ran out of time.
