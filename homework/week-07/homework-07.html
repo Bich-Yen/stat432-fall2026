@@ -2451,10 +2451,10 @@ Observed   0   1   2   3   4   5   6   7   8   9
 <details class="code-fold">
 <summary>Show the workflow</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test misclassification rate</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Miclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Misclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] &quot;Test Miclassification Rate:  0.155455904334828&quot;</code></pre>
+<pre><code>[1] &quot;Test Misclassification Rate:  0.155455904334828&quot;</code></pre>
 </div>
 </div></li>
 <li><p>Does the method work? Why do you think it works or does not work?</p>
@@ -2493,10 +2493,10 @@ Observed   0   1   2   3   4   5   6   7   8   9
 <details class="code-fold">
 <summary>Show the workflow</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test misclassification rate</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Miclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred2 <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Misclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred2 <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] &quot;Test Miclassification Rate:  0.342301943198804&quot;</code></pre>
+<pre><code>[1] &quot;Test Misclassification Rate:  0.342301943198804&quot;</code></pre>
 </div>
 </div>
 <p>The misclassification rate for using 10 predictors is about twice as high as the misclassification rate for using 40 predictors. From Week 7 Lecture: Discriminant Analysis, the cost of QDA’s extra flexibility is “estimating a separate covariance requires enough information <strong>within each class</strong>”. With only 10 predictors, QDA estimates smaller covariance matrices for each class, which could be more stable. However, those 10 pixel predictors may leave out useful information for classifying digits. High variance does not necessarily mean a pixel separates the digit classes well.</p>
