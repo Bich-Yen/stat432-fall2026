@@ -2355,7 +2355,7 @@ Observed   0   1
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>X_train <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(train[, <span class="sc">-</span><span class="dv">1</span>])</span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>X_test <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(test[, <span class="sc">-</span><span class="dv">1</span>])</span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Select 40 with the largest marginal variances in the training data</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Select 40 predictors with the largest marginal variances in the training data</span></span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>pixel_var <span class="ot">&lt;-</span> <span class="fu">apply</span>(X_train, <span class="dv">2</span>, var)</span>
 <span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>top40 <span class="ot">&lt;-</span> <span class="fu">order</span>(pixel_var, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>]</span>
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
@@ -2402,8 +2402,50 @@ Observed   0   1   2   3   4   5   6   7   8   9
 <pre><code>[1] &quot;Test Miclassification Rate:  0.155455904334828&quot;</code></pre>
 </div>
 </div></li>
-<li><p>Does the method work? Why do you think it works or does not work?</p></li>
-<li><p>Repeat the analysis using the 10 predictors with the largest marginal variances in the training data. How does the test misclassification rate compare with the 40-predictor version? Why do you think this happens?</p></li>
+<li><p>Does the method work? Why do you think it works or does not work?</p>
+<p>In the test confusion matrix, the diagonal entries represent counts that correctly classified images for each digit, and the non-diagonal entries represent counts for misclassifications. In order words, we want more counts in the diagonal entries and less counts in the non-diagonal entries. The test misclassification rate is about 15.55%, which means QDA classified about 84.5% of test images correctly. This suggest that the QDA method worked as a classifier and made useful predictions, but it still made some errors in classifying digits.</p></li>
+<li><p>Repeat the analysis using the 10 predictors with the largest marginal variances in the training data. How does the test misclassification rate compare with the 40-predictor version? Why do you think this happens?</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show the workflow</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select 10 predictors with the largest marginal variances in the training data</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>top10 <span class="ot">&lt;-</span> <span class="fu">order</span>(pixel_var, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>X_train_10 <span class="ot">&lt;-</span> X_train[, top10, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>X_test_10 <span class="ot">&lt;-</span> X_test[, top10, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit QDA using 10 predictors</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>pixel_qda2 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(<span class="at">x =</span> X_train_10, <span class="at">grouping =</span> y_train)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>pixel_qda_pred2 <span class="ot">&lt;-</span> <span class="fu">predict</span>(pixel_qda2, <span class="at">newdata =</span> X_test_10)<span class="sc">$</span>class</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test confusion matrix</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> y_test, <span class="at">Predicted =</span> pixel_qda_pred2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Predicted
+Observed   0   1   2   3   4   5   6   7   8   9
+       0 298   0  11   1   1  16  28   4   0   0
+       1   0 241  10   0   3   1   1   0   2   6
+       2  19   2  95  14  14   3  22  21   5   3
+       3   5   0   6 103   3  42   0   0   7   0
+       4   1   5  14   0  95   2   4  15  17  47
+       5  15   0   6  25   4  96   4   2   8   0
+       6  41   0  15   4   0  18  78   7   5   2
+       7   4   1   6   0   6   0   1 122   0   7
+       8   1   2  11  36  12  11   4   1  74  14
+       9   0   2   9   2  20   0   0  16  10 118</code></pre>
+</div>
+<details class="code-fold">
+<summary>Show the workflow</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test misclassification rate</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Miclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred2 <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;Test Miclassification Rate:  0.342301943198804&quot;</code></pre>
+</div>
+</div>
+<p>The misclassification rate for using 10 predictors is about twice as high as the misclassification rate for using 40 predictors. From Week 7 Lecture: Discriminant Analysis, the cost of QDA’s extra flexibility is “estimating a separate covariance requires enough information <strong>within each class</strong>”. With only 10 predictors, QDA estimates smaller covariance matrices for each class, which could be more stable. However, those 10 pixel predictors may leave out useful information for classifying digits. High variance does not necessarily mean a pixel separates the digit classes well.</p>
+<p>The QDA model with 40 predictors retains more useful information to classify digits. This outweighs the cost of extra estimation variability from fitting larger covariance matrices. Overall, losing information with 10 predictors hurts the model more than the smaller covariance estimates help.</p></li>
 </ol>
 </section>
 <section id="question-3-compare-lda-and-qda" class="level2">
