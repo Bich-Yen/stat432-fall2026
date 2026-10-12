@@ -2282,37 +2282,92 @@ vertical-align: -.125em;
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># pi_k_hat = # of observations in class k / n</span></span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(y)</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>pi_0_hat <span class="ot">&lt;-</span> <span class="fu">sum</span>(y <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">/</span> n</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>pi_1_hat <span class="ot">&lt;-</span> <span class="fu">sum</span>(y <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">/</span> n</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate class means</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>mu0_hat <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(X[y <span class="sc">==</span> <span class="dv">0</span>, ])</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>mu1_hat <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(X[y <span class="sc">==</span> <span class="dv">1</span>, ])</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate pooled covariance matrix (K = 2)</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 = sweeps across rows, 2 = sweeps across columns</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>C0_centered <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X[y <span class="sc">==</span> <span class="dv">0</span>, ], <span class="dv">2</span>, mu0_hat, <span class="st">&quot;-&quot;</span>)</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>C1_centered <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X[y <span class="sc">==</span> <span class="dv">1</span>, ], <span class="dv">2</span>, mu1_hat, <span class="st">&quot;-&quot;</span>)</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>Sigma_hat <span class="ot">&lt;-</span> (<span class="fu">crossprod</span>(C0_centered) <span class="sc">+</span> <span class="fu">crossprod</span>(C1_centered)) <span class="sc">/</span> (n <span class="sc">-</span> K)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;pi_0_hat: &quot;</span>, pi_0_hat)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;pi_0_hat:  0.653679653679654&quot;</code></pre>
+</div>
+<details class="code-fold">
+<summary>Show the workflow</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>pi_1_hat <span class="ot">&lt;-</span> <span class="fu">sum</span>(y <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">/</span> n</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;pi_1_hat: &quot;</span>, pi_1_hat)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] &quot;pi_1_hat:  0.346320346320346&quot;</code></pre>
+</div>
+<details class="code-fold">
+<summary>Show the workflow</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate class means</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>mu0_hat <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(X[y <span class="sc">==</span> <span class="dv">0</span>, ])</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>mu0_hat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>       sbp    tobacco        ldl  adiposity    famhist      typea    obesity 
+135.460265   2.634735   4.344238  23.969106   1.317881  52.367550  25.737450 
+   alcohol        age 
+ 15.931358  38.854305 </code></pre>
+</div>
+<details class="code-fold">
+<summary>Show the workflow</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>mu1_hat <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(X[y <span class="sc">==</span> <span class="dv">1</span>, ])</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>mu1_hat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>       sbp    tobacco        ldl  adiposity    famhist      typea    obesity 
+143.737500   5.524875   5.487938  28.120250   1.600000  54.493750  26.622937 
+   alcohol        age 
+ 19.145250  50.293750 </code></pre>
+</div>
+<details class="code-fold">
+<summary>Show the workflow</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate pooled covariance matrix (K = 2)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 = sweeps across rows, 2 = sweeps across columns</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>C0_centered <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X[y <span class="sc">==</span> <span class="dv">0</span>, ], <span class="dv">2</span>, mu0_hat, <span class="st">&quot;-&quot;</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>C1_centered <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X[y <span class="sc">==</span> <span class="dv">1</span>, ], <span class="dv">2</span>, mu1_hat, <span class="st">&quot;-&quot;</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>Sigma_hat <span class="ot">&lt;-</span> (<span class="fu">crossprod</span>(C0_centered) <span class="sc">+</span> <span class="fu">crossprod</span>(C1_centered)) <span class="sc">/</span> (n <span class="sc">-</span> K)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>Sigma_hat</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>                  sbp    tobacco         ldl  adiposity    famhist        typea
+sbp       405.4347786 14.5851882  4.58124834 49.1643582 0.33698819 -15.58772153
+tobacco    14.5851882 19.2425564  0.76320271  7.5381093 0.01582050  -2.05730592
+ldl         4.5812483  0.7632027  4.00058129  6.0326970 0.09185024   0.34459233
+adiposity  49.1643582  7.5381093  6.03269701 56.7528931 0.43280832  -5.30956633
+famhist     0.3369882  0.0158205  0.09185024  0.4328083 0.22583357   0.08112007
+typea     -15.5877215 -2.0573059  0.34459233 -5.3095663 0.08112007  95.56564291
+obesity    18.9388430  1.8334506  2.66005159 22.7078852 0.18402776   2.64006728
+alcohol    64.4003517 20.5170451 -2.53290675 16.1190253 0.76846885   7.96003164
+age        95.1338895 22.7654113  6.47892049 60.5086715 0.99736251 -20.27833492
+             obesity     alcohol         age
+sbp       18.9388430  64.4003517  95.1338895
+tobacco    1.8334506  20.5170451  22.7654113
+ldl        2.6600516  -2.5329068   6.4789205
+adiposity 22.7078852  16.1190253  60.5086715
+famhist    0.1840278   0.7684688   0.9973625
+typea      2.6400673   7.9600316 -20.2783349
+obesity   17.6154236   4.6893563  15.6969995
+alcohol    4.6893563 598.2766133  27.8859413
+age       15.6969995  27.8859413 184.1321373</code></pre>
+</div>
 </div></li>
 <li><p>Use your estimated values to predict the label of each observation in the training data. These are in-sample fitted labels. Provide the confusion matrix, with observed classes in rows and predicted classes in columns. Check that the dimensions of your matrices and vectors match. Calculate the scores yourself for this part.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Prediction requires scoring every observation under both class possibilities</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># C0_centered and C1_centered contain only observations that belong to their respective classes</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>X0 <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X, <span class="dv">2</span>, mu0_hat, <span class="st">&quot;-&quot;</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X, <span class="dv">2</span>, mu1_hat, <span class="st">&quot;-&quot;</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare the two fitted log scores</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>score0 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">rowSums</span>(X0 <span class="sc">*</span> <span class="fu">t</span>(<span class="fu">solve</span>(Sigma_hat, <span class="fu">t</span>(X0)))) <span class="sc">+</span> <span class="fu">log</span>(pi_0_hat)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>score1 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">rowSums</span>(X1 <span class="sc">*</span> <span class="fu">t</span>(<span class="fu">solve</span>(Sigma_hat, <span class="fu">t</span>(X1)))) <span class="sc">+</span> <span class="fu">log</span>(pi_1_hat)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>decision <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(score0 <span class="sc">&gt;=</span> score1, <span class="dv">0</span>, <span class="dv">1</span>)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Form the confusion matrix</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># A confusion matirx counts how many observations in each actual class were assigned to each predicted class</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> y, <span class="at">Predicted =</span> decision)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Prediction requires scoring every observation under both class possibilities</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># C0_centered and C1_centered contain only observations that belong to their respective classes</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>X0 <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X, <span class="dv">2</span>, mu0_hat, <span class="st">&quot;-&quot;</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X, <span class="dv">2</span>, mu1_hat, <span class="st">&quot;-&quot;</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare the two fitted log scores</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>score0 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">rowSums</span>(X0 <span class="sc">*</span> <span class="fu">t</span>(<span class="fu">solve</span>(Sigma_hat, <span class="fu">t</span>(X0)))) <span class="sc">+</span> <span class="fu">log</span>(pi_0_hat)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>score1 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">rowSums</span>(X1 <span class="sc">*</span> <span class="fu">t</span>(<span class="fu">solve</span>(Sigma_hat, <span class="fu">t</span>(X1)))) <span class="sc">+</span> <span class="fu">log</span>(pi_1_hat)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>decision <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(score0 <span class="sc">&gt;=</span> score1, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Form the confusion matrix</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="co"># A confusion matirx counts how many observations in each actual class were assigned to each predicted class</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> y, <span class="at">Predicted =</span> decision)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>        Predicted
@@ -2325,9 +2380,9 @@ Observed   0   1
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>heart_lda <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">lda</span>(chd <span class="sc">~</span> ., <span class="at">data =</span> heart)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>heart_lda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(heart_lda, <span class="at">newdata =</span> heart)<span class="sc">$</span>class</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> heart<span class="sc">$</span>chd, <span class="at">Predicted =</span> heart_lda_pred)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>heart_lda <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">lda</span>(chd <span class="sc">~</span> ., <span class="at">data =</span> heart)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>heart_lda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(heart_lda, <span class="at">newdata =</span> heart)<span class="sc">$</span>class</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> heart<span class="sc">$</span>chd, <span class="at">Predicted =</span> heart_lda_pred)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>        Predicted
@@ -2347,20 +2402,20 @@ Observed   0   1
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the training and testing data</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">gzfile</span>(<span class="st">&quot;data/zip-train.csv.gz&quot;</span>), <span class="at">header =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">gzfile</span>(<span class="st">&quot;data/zip-test.csv.gz&quot;</span>), <span class="at">header =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove the first column because it is only a digit label</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>X_train <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(train[, <span class="sc">-</span><span class="dv">1</span>])</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>X_test <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(test[, <span class="sc">-</span><span class="dv">1</span>])</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Select 40 predictors with the largest marginal variances in the training data</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>pixel_var <span class="ot">&lt;-</span> <span class="fu">apply</span>(X_train, <span class="dv">2</span>, var)</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>top40 <span class="ot">&lt;-</span> <span class="fu">order</span>(pixel_var, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>]</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>X_train_40 <span class="ot">&lt;-</span> X_train[, top40, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>X_test_40 <span class="ot">&lt;-</span> X_test[, top40, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the training and testing data</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">gzfile</span>(<span class="st">&quot;data/zip-train.csv.gz&quot;</span>), <span class="at">header =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="fu">gzfile</span>(<span class="st">&quot;data/zip-test.csv.gz&quot;</span>), <span class="at">header =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove the first column because it is only a digit label</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>X_train <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(train[, <span class="sc">-</span><span class="dv">1</span>])</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>X_test <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(test[, <span class="sc">-</span><span class="dv">1</span>])</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Select 40 predictors with the largest marginal variances in the training data</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>pixel_var <span class="ot">&lt;-</span> <span class="fu">apply</span>(X_train, <span class="dv">2</span>, var)</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>top40 <span class="ot">&lt;-</span> <span class="fu">order</span>(pixel_var, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>]</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>X_train_40 <span class="ot">&lt;-</span> X_train[, top40, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>X_test_40 <span class="ot">&lt;-</span> X_test[, top40, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 <ol type="a">
@@ -2368,16 +2423,16 @@ Observed   0   1
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Digit labels are class categories, not numeric measurements</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Factor tells MASS::qda to treat digit labels as group names rather than numeric values</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>y_train <span class="ot">&lt;-</span> <span class="fu">factor</span>(train[, <span class="dv">1</span>])</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>y_test <span class="ot">&lt;-</span> <span class="fu">factor</span>(test[, <span class="dv">1</span>])</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>pixel_qda <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(<span class="at">x =</span> X_train_40, <span class="at">grouping =</span> y_train)</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>pixel_qda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(pixel_qda, <span class="at">newdata =</span> X_test_40)<span class="sc">$</span>class</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test confusion matrix</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> y_test, <span class="at">Predicted =</span> pixel_qda_pred)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Digit labels are class categories, not numeric measurements</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Factor tells MASS::qda to treat digit labels as group names rather than numeric values</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>y_train <span class="ot">&lt;-</span> <span class="fu">factor</span>(train[, <span class="dv">1</span>])</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>y_test <span class="ot">&lt;-</span> <span class="fu">factor</span>(test[, <span class="dv">1</span>])</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>pixel_qda <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(<span class="at">x =</span> X_train_40, <span class="at">grouping =</span> y_train)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>pixel_qda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(pixel_qda, <span class="at">newdata =</span> X_test_40)<span class="sc">$</span>class</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test confusion matrix</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> y_test, <span class="at">Predicted =</span> pixel_qda_pred)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>        Predicted
@@ -2395,8 +2450,8 @@ Observed   0   1   2   3   4   5   6   7   8   9
 </div>
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test misclassification rate</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Miclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test misclassification rate</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Miclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] &quot;Test Miclassification Rate:  0.155455904334828&quot;</code></pre>
@@ -2408,18 +2463,18 @@ Observed   0   1   2   3   4   5   6   7   8   9
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select 10 predictors with the largest marginal variances in the training data</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>top10 <span class="ot">&lt;-</span> <span class="fu">order</span>(pixel_var, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>X_train_10 <span class="ot">&lt;-</span> X_train[, top10, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>X_test_10 <span class="ot">&lt;-</span> X_test[, top10, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit QDA using 10 predictors</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>pixel_qda2 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(<span class="at">x =</span> X_train_10, <span class="at">grouping =</span> y_train)</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>pixel_qda_pred2 <span class="ot">&lt;-</span> <span class="fu">predict</span>(pixel_qda2, <span class="at">newdata =</span> X_test_10)<span class="sc">$</span>class</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test confusion matrix</span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> y_test, <span class="at">Predicted =</span> pixel_qda_pred2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select 10 predictors with the largest marginal variances in the training data</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>top10 <span class="ot">&lt;-</span> <span class="fu">order</span>(pixel_var, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>X_train_10 <span class="ot">&lt;-</span> X_train[, top10, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>X_test_10 <span class="ot">&lt;-</span> X_test[, top10, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit QDA using 10 predictors</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>pixel_qda2 <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(<span class="at">x =</span> X_train_10, <span class="at">grouping =</span> y_train)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>pixel_qda_pred2 <span class="ot">&lt;-</span> <span class="fu">predict</span>(pixel_qda2, <span class="at">newdata =</span> X_test_10)<span class="sc">$</span>class</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test confusion matrix</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="at">Observed =</span> y_test, <span class="at">Predicted =</span> pixel_qda_pred2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>        Predicted
@@ -2437,8 +2492,8 @@ Observed   0   1   2   3   4   5   6   7   8   9
 </div>
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test misclassification rate</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Miclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred2 <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Report the test misclassification rate</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Test Miclassification Rate: &quot;</span>, <span class="fu">mean</span>(pixel_qda_pred2 <span class="sc">!=</span> y_test))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] &quot;Test Miclassification Rate:  0.342301943198804&quot;</code></pre>
@@ -2471,111 +2526,111 @@ Observed   0   1   2   3   4   5   6   7   8   9
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">43201</span>)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>rho_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.2</span>, <span class="fl">0.4</span>, <span class="fl">0.6</span>, <span class="fl">0.8</span>, <span class="fl">0.9</span>)</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>simulations <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>, <span class="fu">length</span>(rho_values))</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate 100 training observations and 1000 test observations for each value of rho</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(rho_values)){</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  rho <span class="ot">&lt;-</span> rho_values[i]</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  Sigma1 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, rho, rho, <span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  Sigma2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span>rho, <span class="sc">-</span>rho, <span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  Class1_train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">100</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma1),</span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">100</span>)</span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>  Class2_train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">100</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma2),</span>
-<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">100</span>)</span>
-<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>  Class1_test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma1),</span>
-<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">1000</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">1000</span>)</span>
-<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>  Class2_test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>    MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma2),</span>
-<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">1000</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">1000</span>)</span>
-<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>  X_train <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Class1_train, Class2_train)</span>
-<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>  y_train <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">100</span>), <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">100</span>)))</span>
-<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>  X_test <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Class1_test, Class2_test)</span>
-<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>  y_test <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">1000</span>), <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">1000</span>)))</span>
-<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a>  simulations[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">rho =</span> rho,</span>
-<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">X_train =</span> X_train,</span>
-<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">y_train =</span> y_train,</span>
-<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">X_test =</span> X_test,</span>
-<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">y_test =</span> y_test</span>
-<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit LDA and QDA for each value of rho</span></span>
-<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a>lda_results <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>, <span class="fu">length</span>(simulations))</span>
-<span id="cb17-47"><a href="#cb17-47" aria-hidden="true" tabindex="-1"></a>qda_results <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>, <span class="fu">length</span>(simulations))</span>
-<span id="cb17-48"><a href="#cb17-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-49"><a href="#cb17-49" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(simulations)){</span>
-<span id="cb17-50"><a href="#cb17-50" aria-hidden="true" tabindex="-1"></a>  sim <span class="ot">&lt;-</span> simulations[[i]]</span>
-<span id="cb17-51"><a href="#cb17-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-52"><a href="#cb17-52" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit LDA</span></span>
-<span id="cb17-53"><a href="#cb17-53" aria-hidden="true" tabindex="-1"></a>  lda_fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">lda</span>(</span>
-<span id="cb17-54"><a href="#cb17-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> sim<span class="sc">$</span>X_train, </span>
-<span id="cb17-55"><a href="#cb17-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">grouping =</span> sim<span class="sc">$</span>y_train, </span>
-<span id="cb17-56"><a href="#cb17-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>)</span>
-<span id="cb17-57"><a href="#cb17-57" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-58"><a href="#cb17-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-59"><a href="#cb17-59" aria-hidden="true" tabindex="-1"></a>  lda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(lda_fit, <span class="at">newdata =</span> sim<span class="sc">$</span>X_test)<span class="sc">$</span>class</span>
-<span id="cb17-60"><a href="#cb17-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-61"><a href="#cb17-61" aria-hidden="true" tabindex="-1"></a>  lda_results[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb17-62"><a href="#cb17-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">rho =</span> sim<span class="sc">$</span>rho,</span>
-<span id="cb17-63"><a href="#cb17-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">confusion =</span> <span class="fu">table</span>(<span class="at">Observed =</span> sim<span class="sc">$</span>y_test, <span class="at">Predicted =</span> lda_pred),</span>
-<span id="cb17-64"><a href="#cb17-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">test_misclass_rate =</span> <span class="fu">mean</span>(lda_pred <span class="sc">!=</span> sim<span class="sc">$</span>y_test)</span>
-<span id="cb17-65"><a href="#cb17-65" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-66"><a href="#cb17-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-67"><a href="#cb17-67" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit QDA</span></span>
-<span id="cb17-68"><a href="#cb17-68" aria-hidden="true" tabindex="-1"></a>  qda_fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(</span>
-<span id="cb17-69"><a href="#cb17-69" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> sim<span class="sc">$</span>X_train, </span>
-<span id="cb17-70"><a href="#cb17-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">grouping =</span> sim<span class="sc">$</span>y_train, </span>
-<span id="cb17-71"><a href="#cb17-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>)</span>
-<span id="cb17-72"><a href="#cb17-72" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-73"><a href="#cb17-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-74"><a href="#cb17-74" aria-hidden="true" tabindex="-1"></a>  qda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(qda_fit, <span class="at">newdata =</span> sim<span class="sc">$</span>X_test)<span class="sc">$</span>class</span>
-<span id="cb17-75"><a href="#cb17-75" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-76"><a href="#cb17-76" aria-hidden="true" tabindex="-1"></a>  qda_results[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb17-77"><a href="#cb17-77" aria-hidden="true" tabindex="-1"></a>    <span class="at">rho =</span> sim<span class="sc">$</span>rho,</span>
-<span id="cb17-78"><a href="#cb17-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">confusion =</span> <span class="fu">table</span>(<span class="at">Observed =</span> sim<span class="sc">$</span>y_test, <span class="at">Predicted =</span> qda_pred),</span>
-<span id="cb17-79"><a href="#cb17-79" aria-hidden="true" tabindex="-1"></a>    <span class="at">test_misclass_rate =</span> <span class="fu">mean</span>(qda_pred <span class="sc">!=</span> sim<span class="sc">$</span>y_test)</span>
-<span id="cb17-80"><a href="#cb17-80" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb17-81"><a href="#cb17-81" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb17-82"><a href="#cb17-82" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-83"><a href="#cb17-83" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimate the class means from the training data, with one pooled covariance matrix for LDA and one full covariance matrix per class for QDA.</span></span>
-<span id="cb17-84"><a href="#cb17-84" aria-hidden="true" tabindex="-1"></a>X_train1 <span class="ot">&lt;-</span> X_train[y_train <span class="sc">==</span> <span class="st">&quot;1&quot;</span>, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb17-85"><a href="#cb17-85" aria-hidden="true" tabindex="-1"></a>X_train2 <span class="ot">&lt;-</span> X_train[y_train <span class="sc">==</span> <span class="st">&quot;2&quot;</span>, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb17-86"><a href="#cb17-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-87"><a href="#cb17-87" aria-hidden="true" tabindex="-1"></a>mu1_hat <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(X_train1)</span>
-<span id="cb17-88"><a href="#cb17-88" aria-hidden="true" tabindex="-1"></a>mu2_hat <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(X_train2)</span>
-<span id="cb17-89"><a href="#cb17-89" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-90"><a href="#cb17-90" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate pooled covariance matrix for LDA</span></span>
-<span id="cb17-91"><a href="#cb17-91" aria-hidden="true" tabindex="-1"></a>C1_centered <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X_train1, <span class="dv">2</span>, mu1_hat, <span class="st">&quot;-&quot;</span>)</span>
-<span id="cb17-92"><a href="#cb17-92" aria-hidden="true" tabindex="-1"></a>C2_centered <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X_train2, <span class="dv">2</span>, mu2_hat, <span class="st">&quot;-&quot;</span>)</span>
-<span id="cb17-93"><a href="#cb17-93" aria-hidden="true" tabindex="-1"></a>Sigma_hat_lda <span class="ot">&lt;-</span> (<span class="fu">crossprod</span>(C1_centered) <span class="sc">+</span> <span class="fu">crossprod</span>(C2_centered)) <span class="sc">/</span> (<span class="fu">nrow</span>(X_train) <span class="sc">-</span> <span class="dv">2</span>)</span>
-<span id="cb17-94"><a href="#cb17-94" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-95"><a href="#cb17-95" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate full covariance matrix per class for QDA</span></span>
-<span id="cb17-96"><a href="#cb17-96" aria-hidden="true" tabindex="-1"></a>Sigma1_hat_qda <span class="ot">&lt;-</span> <span class="fu">cov</span>(X_train1)</span>
-<span id="cb17-97"><a href="#cb17-97" aria-hidden="true" tabindex="-1"></a>Sigma2_hat_qda <span class="ot">&lt;-</span> <span class="fu">cov</span>(X_train2)</span>
-<span id="cb17-98"><a href="#cb17-98" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-99"><a href="#cb17-99" aria-hidden="true" tabindex="-1"></a><span class="co"># Output the test classification rates</span></span>
-<span id="cb17-100"><a href="#cb17-100" aria-hidden="true" tabindex="-1"></a>test_misclass_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb17-101"><a href="#cb17-101" aria-hidden="true" tabindex="-1"></a>  <span class="at">rho =</span> rho_values,</span>
-<span id="cb17-102"><a href="#cb17-102" aria-hidden="true" tabindex="-1"></a>  <span class="at">LDA_test_error =</span> <span class="fu">vapply</span>(lda_results, <span class="st">&#39;[[&#39;</span>, <span class="fu">numeric</span>(<span class="dv">1</span>), <span class="st">&quot;test_misclass_rate&quot;</span>),</span>
-<span id="cb17-103"><a href="#cb17-103" aria-hidden="true" tabindex="-1"></a>  <span class="at">QDA_test_error =</span> <span class="fu">vapply</span>(qda_results, <span class="st">&#39;[[&#39;</span>, <span class="fu">numeric</span>(<span class="dv">1</span>), <span class="st">&quot;test_misclass_rate&quot;</span>)</span>
-<span id="cb17-104"><a href="#cb17-104" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb17-105"><a href="#cb17-105" aria-hidden="true" tabindex="-1"></a>test_misclass_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">43201</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>rho_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.2</span>, <span class="fl">0.4</span>, <span class="fl">0.6</span>, <span class="fl">0.8</span>, <span class="fl">0.9</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>simulations <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>, <span class="fu">length</span>(rho_values))</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate 100 training observations and 1000 test observations for each value of rho</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(rho_values)){</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  rho <span class="ot">&lt;-</span> rho_values[i]</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  Sigma1 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, rho, rho, <span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  Sigma2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span>rho, <span class="sc">-</span>rho, <span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  Class1_train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>    MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">100</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma1),</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">100</span>)</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>  Class2_train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>    MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">100</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma2),</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">100</span>)</span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>  Class1_test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>    MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma1),</span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">1000</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">1000</span>)</span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>  Class2_test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>    MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma2),</span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">1000</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">1000</span>)</span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a>  X_train <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Class1_train, Class2_train)</span>
+<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>  y_train <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">100</span>), <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">100</span>)))</span>
+<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a>  X_test <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Class1_test, Class2_test)</span>
+<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a>  y_test <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">1000</span>), <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">1000</span>)))</span>
+<span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a>  simulations[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb26-37"><a href="#cb26-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">rho =</span> rho,</span>
+<span id="cb26-38"><a href="#cb26-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">X_train =</span> X_train,</span>
+<span id="cb26-39"><a href="#cb26-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">y_train =</span> y_train,</span>
+<span id="cb26-40"><a href="#cb26-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">X_test =</span> X_test,</span>
+<span id="cb26-41"><a href="#cb26-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">y_test =</span> y_test</span>
+<span id="cb26-42"><a href="#cb26-42" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-43"><a href="#cb26-43" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb26-44"><a href="#cb26-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-45"><a href="#cb26-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit LDA and QDA for each value of rho</span></span>
+<span id="cb26-46"><a href="#cb26-46" aria-hidden="true" tabindex="-1"></a>lda_results <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>, <span class="fu">length</span>(simulations))</span>
+<span id="cb26-47"><a href="#cb26-47" aria-hidden="true" tabindex="-1"></a>qda_results <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>, <span class="fu">length</span>(simulations))</span>
+<span id="cb26-48"><a href="#cb26-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-49"><a href="#cb26-49" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(simulations)){</span>
+<span id="cb26-50"><a href="#cb26-50" aria-hidden="true" tabindex="-1"></a>  sim <span class="ot">&lt;-</span> simulations[[i]]</span>
+<span id="cb26-51"><a href="#cb26-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-52"><a href="#cb26-52" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit LDA</span></span>
+<span id="cb26-53"><a href="#cb26-53" aria-hidden="true" tabindex="-1"></a>  lda_fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">lda</span>(</span>
+<span id="cb26-54"><a href="#cb26-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> sim<span class="sc">$</span>X_train, </span>
+<span id="cb26-55"><a href="#cb26-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">grouping =</span> sim<span class="sc">$</span>y_train, </span>
+<span id="cb26-56"><a href="#cb26-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>)</span>
+<span id="cb26-57"><a href="#cb26-57" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-58"><a href="#cb26-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-59"><a href="#cb26-59" aria-hidden="true" tabindex="-1"></a>  lda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(lda_fit, <span class="at">newdata =</span> sim<span class="sc">$</span>X_test)<span class="sc">$</span>class</span>
+<span id="cb26-60"><a href="#cb26-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-61"><a href="#cb26-61" aria-hidden="true" tabindex="-1"></a>  lda_results[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb26-62"><a href="#cb26-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">rho =</span> sim<span class="sc">$</span>rho,</span>
+<span id="cb26-63"><a href="#cb26-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">confusion =</span> <span class="fu">table</span>(<span class="at">Observed =</span> sim<span class="sc">$</span>y_test, <span class="at">Predicted =</span> lda_pred),</span>
+<span id="cb26-64"><a href="#cb26-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">test_misclass_rate =</span> <span class="fu">mean</span>(lda_pred <span class="sc">!=</span> sim<span class="sc">$</span>y_test)</span>
+<span id="cb26-65"><a href="#cb26-65" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-66"><a href="#cb26-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-67"><a href="#cb26-67" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit QDA</span></span>
+<span id="cb26-68"><a href="#cb26-68" aria-hidden="true" tabindex="-1"></a>  qda_fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(</span>
+<span id="cb26-69"><a href="#cb26-69" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> sim<span class="sc">$</span>X_train, </span>
+<span id="cb26-70"><a href="#cb26-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">grouping =</span> sim<span class="sc">$</span>y_train, </span>
+<span id="cb26-71"><a href="#cb26-71" aria-hidden="true" tabindex="-1"></a>    <span class="at">prior =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>)</span>
+<span id="cb26-72"><a href="#cb26-72" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-73"><a href="#cb26-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-74"><a href="#cb26-74" aria-hidden="true" tabindex="-1"></a>  qda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(qda_fit, <span class="at">newdata =</span> sim<span class="sc">$</span>X_test)<span class="sc">$</span>class</span>
+<span id="cb26-75"><a href="#cb26-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-76"><a href="#cb26-76" aria-hidden="true" tabindex="-1"></a>  qda_results[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb26-77"><a href="#cb26-77" aria-hidden="true" tabindex="-1"></a>    <span class="at">rho =</span> sim<span class="sc">$</span>rho,</span>
+<span id="cb26-78"><a href="#cb26-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">confusion =</span> <span class="fu">table</span>(<span class="at">Observed =</span> sim<span class="sc">$</span>y_test, <span class="at">Predicted =</span> qda_pred),</span>
+<span id="cb26-79"><a href="#cb26-79" aria-hidden="true" tabindex="-1"></a>    <span class="at">test_misclass_rate =</span> <span class="fu">mean</span>(qda_pred <span class="sc">!=</span> sim<span class="sc">$</span>y_test)</span>
+<span id="cb26-80"><a href="#cb26-80" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb26-81"><a href="#cb26-81" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb26-82"><a href="#cb26-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-83"><a href="#cb26-83" aria-hidden="true" tabindex="-1"></a><span class="co"># Estimate the class means from the training data, with one pooled covariance matrix for LDA and one full covariance matrix per class for QDA.</span></span>
+<span id="cb26-84"><a href="#cb26-84" aria-hidden="true" tabindex="-1"></a>X_train1 <span class="ot">&lt;-</span> X_train[y_train <span class="sc">==</span> <span class="st">&quot;1&quot;</span>, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb26-85"><a href="#cb26-85" aria-hidden="true" tabindex="-1"></a>X_train2 <span class="ot">&lt;-</span> X_train[y_train <span class="sc">==</span> <span class="st">&quot;2&quot;</span>, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb26-86"><a href="#cb26-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-87"><a href="#cb26-87" aria-hidden="true" tabindex="-1"></a>mu1_hat <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(X_train1)</span>
+<span id="cb26-88"><a href="#cb26-88" aria-hidden="true" tabindex="-1"></a>mu2_hat <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(X_train2)</span>
+<span id="cb26-89"><a href="#cb26-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-90"><a href="#cb26-90" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate pooled covariance matrix for LDA</span></span>
+<span id="cb26-91"><a href="#cb26-91" aria-hidden="true" tabindex="-1"></a>C1_centered <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X_train1, <span class="dv">2</span>, mu1_hat, <span class="st">&quot;-&quot;</span>)</span>
+<span id="cb26-92"><a href="#cb26-92" aria-hidden="true" tabindex="-1"></a>C2_centered <span class="ot">&lt;-</span> <span class="fu">sweep</span>(X_train2, <span class="dv">2</span>, mu2_hat, <span class="st">&quot;-&quot;</span>)</span>
+<span id="cb26-93"><a href="#cb26-93" aria-hidden="true" tabindex="-1"></a>Sigma_hat_lda <span class="ot">&lt;-</span> (<span class="fu">crossprod</span>(C1_centered) <span class="sc">+</span> <span class="fu">crossprod</span>(C2_centered)) <span class="sc">/</span> (<span class="fu">nrow</span>(X_train) <span class="sc">-</span> <span class="dv">2</span>)</span>
+<span id="cb26-94"><a href="#cb26-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-95"><a href="#cb26-95" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate full covariance matrix per class for QDA</span></span>
+<span id="cb26-96"><a href="#cb26-96" aria-hidden="true" tabindex="-1"></a>Sigma1_hat_qda <span class="ot">&lt;-</span> <span class="fu">cov</span>(X_train1)</span>
+<span id="cb26-97"><a href="#cb26-97" aria-hidden="true" tabindex="-1"></a>Sigma2_hat_qda <span class="ot">&lt;-</span> <span class="fu">cov</span>(X_train2)</span>
+<span id="cb26-98"><a href="#cb26-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-99"><a href="#cb26-99" aria-hidden="true" tabindex="-1"></a><span class="co"># Output the test classification rates</span></span>
+<span id="cb26-100"><a href="#cb26-100" aria-hidden="true" tabindex="-1"></a>test_misclass_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb26-101"><a href="#cb26-101" aria-hidden="true" tabindex="-1"></a>  <span class="at">rho =</span> rho_values,</span>
+<span id="cb26-102"><a href="#cb26-102" aria-hidden="true" tabindex="-1"></a>  <span class="at">LDA_test_error =</span> <span class="fu">vapply</span>(lda_results, <span class="st">&#39;[[&#39;</span>, <span class="fu">numeric</span>(<span class="dv">1</span>), <span class="st">&quot;test_misclass_rate&quot;</span>),</span>
+<span id="cb26-103"><a href="#cb26-103" aria-hidden="true" tabindex="-1"></a>  <span class="at">QDA_test_error =</span> <span class="fu">vapply</span>(qda_results, <span class="st">&#39;[[&#39;</span>, <span class="fu">numeric</span>(<span class="dv">1</span>), <span class="st">&quot;test_misclass_rate&quot;</span>)</span>
+<span id="cb26-104"><a href="#cb26-104" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb26-105"><a href="#cb26-105" aria-hidden="true" tabindex="-1"></a>test_misclass_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  rho LDA_test_error QDA_test_error
@@ -2591,82 +2646,82 @@ Observed   0   1   2   3   4   5   6   7   8   9
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>nsim <span class="ot">&lt;-</span> <span class="dv">50</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>lda_errors <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA_real_</span>, <span class="at">nrow =</span> <span class="fu">length</span>(rho_values), <span class="at">ncol =</span> nsim)</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>qda_errors <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA_real_</span>, <span class="at">nrow =</span> <span class="fu">length</span>(rho_values), <span class="at">ncol =</span> nsim)</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(rho_values)){</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  rho <span class="ot">&lt;-</span> rho_values[i]</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  Sigma1 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, rho, rho, <span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  Sigma2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span>rho, <span class="sc">-</span>rho, <span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (m <span class="cf">in</span> <span class="fu">seq_len</span>(nsim)){</span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>    Class1_train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>      MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">100</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma1),</span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">100</span>)</span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>    Class2_train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>      MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">100</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma2),</span>
-<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">100</span>)</span>
-<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>    Class1_test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>      MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma1),</span>
-<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">1000</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">1000</span>)</span>
-<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>    Class2_test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
-<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>      MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma2),</span>
-<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">1000</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">1000</span>)</span>
-<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a>    X_train <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Class1_train, Class2_train)</span>
-<span id="cb19-32"><a href="#cb19-32" aria-hidden="true" tabindex="-1"></a>    y_train <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">100</span>), <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">100</span>)))</span>
-<span id="cb19-33"><a href="#cb19-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-34"><a href="#cb19-34" aria-hidden="true" tabindex="-1"></a>    X_test <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Class1_test, Class2_test)</span>
-<span id="cb19-35"><a href="#cb19-35" aria-hidden="true" tabindex="-1"></a>    y_test <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">1000</span>), <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">1000</span>)))</span>
-<span id="cb19-36"><a href="#cb19-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-37"><a href="#cb19-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fit LDA and QDA</span></span>
-<span id="cb19-38"><a href="#cb19-38" aria-hidden="true" tabindex="-1"></a>    lda_fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">lda</span>(<span class="at">x =</span> X_train, <span class="at">grouping =</span> y_train, <span class="at">prior =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>))</span>
-<span id="cb19-39"><a href="#cb19-39" aria-hidden="true" tabindex="-1"></a>    qda_fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(<span class="at">x =</span> X_train, <span class="at">grouping =</span> y_train, <span class="at">prior =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>))</span>
-<span id="cb19-40"><a href="#cb19-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-41"><a href="#cb19-41" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate test misclassification rate for LDA and QDA</span></span>
-<span id="cb19-42"><a href="#cb19-42" aria-hidden="true" tabindex="-1"></a>    lda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(lda_fit, <span class="at">newdata =</span> X_test)<span class="sc">$</span>class</span>
-<span id="cb19-43"><a href="#cb19-43" aria-hidden="true" tabindex="-1"></a>    qda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(qda_fit, <span class="at">newdata =</span> X_test)<span class="sc">$</span>class</span>
-<span id="cb19-44"><a href="#cb19-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-45"><a href="#cb19-45" aria-hidden="true" tabindex="-1"></a>    lda_errors[i, m] <span class="ot">&lt;-</span> <span class="fu">mean</span>(lda_pred <span class="sc">!=</span> y_test)</span>
-<span id="cb19-46"><a href="#cb19-46" aria-hidden="true" tabindex="-1"></a>    qda_errors[i, m] <span class="ot">&lt;-</span> <span class="fu">mean</span>(qda_pred <span class="sc">!=</span> y_test)</span>
-<span id="cb19-47"><a href="#cb19-47" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb19-48"><a href="#cb19-48" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb19-49"><a href="#cb19-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-50"><a href="#cb19-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot average test error against rho</span></span>
-<span id="cb19-51"><a href="#cb19-51" aria-hidden="true" tabindex="-1"></a>lda_avg <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(lda_errors)</span>
-<span id="cb19-52"><a href="#cb19-52" aria-hidden="true" tabindex="-1"></a>qda_avg <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(qda_errors)</span>
-<span id="cb19-53"><a href="#cb19-53" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-54"><a href="#cb19-54" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="at">x =</span> rho_values, <span class="at">y =</span> lda_avg,</span>
-<span id="cb19-55"><a href="#cb19-55" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Average test error vs. rho&quot;</span>,</span>
-<span id="cb19-56"><a href="#cb19-56" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;rho&quot;</span>,</span>
-<span id="cb19-57"><a href="#cb19-57" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;Test error&quot;</span>,</span>
-<span id="cb19-58"><a href="#cb19-58" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylim =</span> <span class="fu">range</span>(lda_avg, qda_avg),</span>
-<span id="cb19-59"><a href="#cb19-59" aria-hidden="true" tabindex="-1"></a>     <span class="at">type =</span> <span class="st">&quot;b&quot;</span>,</span>
-<span id="cb19-60"><a href="#cb19-60" aria-hidden="true" tabindex="-1"></a>     <span class="at">pch =</span> <span class="dv">16</span>,</span>
-<span id="cb19-61"><a href="#cb19-61" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">&quot;deepskyblue&quot;</span>)</span>
-<span id="cb19-62"><a href="#cb19-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-63"><a href="#cb19-63" aria-hidden="true" tabindex="-1"></a><span class="fu">points</span>(<span class="at">x =</span> rho_values, <span class="at">y =</span> qda_avg,</span>
-<span id="cb19-64"><a href="#cb19-64" aria-hidden="true" tabindex="-1"></a>       <span class="at">pch =</span> <span class="dv">17</span>,</span>
-<span id="cb19-65"><a href="#cb19-65" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="st">&quot;darkorange&quot;</span>)</span>
-<span id="cb19-66"><a href="#cb19-66" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="at">x =</span> rho_values, <span class="at">y =</span> qda_avg,</span>
-<span id="cb19-67"><a href="#cb19-67" aria-hidden="true" tabindex="-1"></a>      <span class="at">pch =</span> <span class="dv">17</span>, </span>
-<span id="cb19-68"><a href="#cb19-68" aria-hidden="true" tabindex="-1"></a>      <span class="at">col =</span> <span class="st">&quot;darkorange&quot;</span>)</span>
-<span id="cb19-69"><a href="#cb19-69" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-70"><a href="#cb19-70" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(</span>
-<span id="cb19-71"><a href="#cb19-71" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;bottomleft&quot;</span>,</span>
-<span id="cb19-72"><a href="#cb19-72" aria-hidden="true" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;LDA&quot;</span>, <span class="st">&quot;QDA&quot;</span>),</span>
-<span id="cb19-73"><a href="#cb19-73" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;deepskyblue&quot;</span>, <span class="st">&quot;darkorange&quot;</span>),</span>
-<span id="cb19-74"><a href="#cb19-74" aria-hidden="true" tabindex="-1"></a>  <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">16</span>, <span class="dv">17</span>),</span>
-<span id="cb19-75"><a href="#cb19-75" aria-hidden="true" tabindex="-1"></a>  <span class="at">lty =</span> <span class="dv">1</span></span>
-<span id="cb19-76"><a href="#cb19-76" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>nsim <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>lda_errors <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA_real_</span>, <span class="at">nrow =</span> <span class="fu">length</span>(rho_values), <span class="at">ncol =</span> nsim)</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>qda_errors <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA_real_</span>, <span class="at">nrow =</span> <span class="fu">length</span>(rho_values), <span class="at">ncol =</span> nsim)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(rho_values)){</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  rho <span class="ot">&lt;-</span> rho_values[i]</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  Sigma1 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, rho, rho, <span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>  Sigma2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="sc">-</span>rho, <span class="sc">-</span>rho, <span class="dv">1</span>), <span class="at">nrow =</span> <span class="dv">2</span>)</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (m <span class="cf">in</span> <span class="fu">seq_len</span>(nsim)){</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    Class1_train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>      MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">100</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma1),</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">100</span>)</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>    Class2_train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>      MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">100</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma2),</span>
+<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">100</span>)</span>
+<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a>    Class1_test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a>      MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma1),</span>
+<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">1000</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">1000</span>)</span>
+<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a>    Class2_test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb28-27"><a href="#cb28-27" aria-hidden="true" tabindex="-1"></a>      MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1000</span>, <span class="at">mu =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>), <span class="at">Sigma =</span> Sigma2),</span>
+<span id="cb28-28"><a href="#cb28-28" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">1000</span> <span class="sc">*</span> <span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">1000</span>)</span>
+<span id="cb28-29"><a href="#cb28-29" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb28-30"><a href="#cb28-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-31"><a href="#cb28-31" aria-hidden="true" tabindex="-1"></a>    X_train <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Class1_train, Class2_train)</span>
+<span id="cb28-32"><a href="#cb28-32" aria-hidden="true" tabindex="-1"></a>    y_train <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">100</span>), <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">100</span>)))</span>
+<span id="cb28-33"><a href="#cb28-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-34"><a href="#cb28-34" aria-hidden="true" tabindex="-1"></a>    X_test <span class="ot">&lt;-</span> <span class="fu">rbind</span>(Class1_test, Class2_test)</span>
+<span id="cb28-35"><a href="#cb28-35" aria-hidden="true" tabindex="-1"></a>    y_test <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">1000</span>), <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">1000</span>)))</span>
+<span id="cb28-36"><a href="#cb28-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-37"><a href="#cb28-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fit LDA and QDA</span></span>
+<span id="cb28-38"><a href="#cb28-38" aria-hidden="true" tabindex="-1"></a>    lda_fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">lda</span>(<span class="at">x =</span> X_train, <span class="at">grouping =</span> y_train, <span class="at">prior =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>))</span>
+<span id="cb28-39"><a href="#cb28-39" aria-hidden="true" tabindex="-1"></a>    qda_fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">qda</span>(<span class="at">x =</span> X_train, <span class="at">grouping =</span> y_train, <span class="at">prior =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>))</span>
+<span id="cb28-40"><a href="#cb28-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-41"><a href="#cb28-41" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Calculate test misclassification rate for LDA and QDA</span></span>
+<span id="cb28-42"><a href="#cb28-42" aria-hidden="true" tabindex="-1"></a>    lda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(lda_fit, <span class="at">newdata =</span> X_test)<span class="sc">$</span>class</span>
+<span id="cb28-43"><a href="#cb28-43" aria-hidden="true" tabindex="-1"></a>    qda_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(qda_fit, <span class="at">newdata =</span> X_test)<span class="sc">$</span>class</span>
+<span id="cb28-44"><a href="#cb28-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-45"><a href="#cb28-45" aria-hidden="true" tabindex="-1"></a>    lda_errors[i, m] <span class="ot">&lt;-</span> <span class="fu">mean</span>(lda_pred <span class="sc">!=</span> y_test)</span>
+<span id="cb28-46"><a href="#cb28-46" aria-hidden="true" tabindex="-1"></a>    qda_errors[i, m] <span class="ot">&lt;-</span> <span class="fu">mean</span>(qda_pred <span class="sc">!=</span> y_test)</span>
+<span id="cb28-47"><a href="#cb28-47" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb28-48"><a href="#cb28-48" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb28-49"><a href="#cb28-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-50"><a href="#cb28-50" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot average test error against rho</span></span>
+<span id="cb28-51"><a href="#cb28-51" aria-hidden="true" tabindex="-1"></a>lda_avg <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(lda_errors)</span>
+<span id="cb28-52"><a href="#cb28-52" aria-hidden="true" tabindex="-1"></a>qda_avg <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(qda_errors)</span>
+<span id="cb28-53"><a href="#cb28-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-54"><a href="#cb28-54" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="at">x =</span> rho_values, <span class="at">y =</span> lda_avg,</span>
+<span id="cb28-55"><a href="#cb28-55" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Average test error vs. rho&quot;</span>,</span>
+<span id="cb28-56"><a href="#cb28-56" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;rho&quot;</span>,</span>
+<span id="cb28-57"><a href="#cb28-57" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;Test error&quot;</span>,</span>
+<span id="cb28-58"><a href="#cb28-58" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylim =</span> <span class="fu">range</span>(lda_avg, qda_avg),</span>
+<span id="cb28-59"><a href="#cb28-59" aria-hidden="true" tabindex="-1"></a>     <span class="at">type =</span> <span class="st">&quot;b&quot;</span>,</span>
+<span id="cb28-60"><a href="#cb28-60" aria-hidden="true" tabindex="-1"></a>     <span class="at">pch =</span> <span class="dv">16</span>,</span>
+<span id="cb28-61"><a href="#cb28-61" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">&quot;deepskyblue&quot;</span>)</span>
+<span id="cb28-62"><a href="#cb28-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-63"><a href="#cb28-63" aria-hidden="true" tabindex="-1"></a><span class="fu">points</span>(<span class="at">x =</span> rho_values, <span class="at">y =</span> qda_avg,</span>
+<span id="cb28-64"><a href="#cb28-64" aria-hidden="true" tabindex="-1"></a>       <span class="at">pch =</span> <span class="dv">17</span>,</span>
+<span id="cb28-65"><a href="#cb28-65" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="st">&quot;darkorange&quot;</span>)</span>
+<span id="cb28-66"><a href="#cb28-66" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="at">x =</span> rho_values, <span class="at">y =</span> qda_avg,</span>
+<span id="cb28-67"><a href="#cb28-67" aria-hidden="true" tabindex="-1"></a>      <span class="at">pch =</span> <span class="dv">17</span>, </span>
+<span id="cb28-68"><a href="#cb28-68" aria-hidden="true" tabindex="-1"></a>      <span class="at">col =</span> <span class="st">&quot;darkorange&quot;</span>)</span>
+<span id="cb28-69"><a href="#cb28-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-70"><a href="#cb28-70" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(</span>
+<span id="cb28-71"><a href="#cb28-71" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;bottomleft&quot;</span>,</span>
+<span id="cb28-72"><a href="#cb28-72" aria-hidden="true" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;LDA&quot;</span>, <span class="st">&quot;QDA&quot;</span>),</span>
+<span id="cb28-73"><a href="#cb28-73" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;deepskyblue&quot;</span>, <span class="st">&quot;darkorange&quot;</span>),</span>
+<span id="cb28-74"><a href="#cb28-74" aria-hidden="true" tabindex="-1"></a>  <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">16</span>, <span class="dv">17</span>),</span>
+<span id="cb28-75"><a href="#cb28-75" aria-hidden="true" tabindex="-1"></a>  <span class="at">lty =</span> <span class="dv">1</span></span>
+<span id="cb28-76"><a href="#cb28-76" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -2680,7 +2735,7 @@ Observed   0   1   2   3   4   5   6   7   8   9
 <p>At small values of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math>, the LDA model generally has a lower average test error than the QDA model. As <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math> increases, the average test error for LDA plateaus whereas the average test error for QDA decreases. Eventually, at large values of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math>, the QDA model has a lower average test error than the LDA model.</p>
 <p>When <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math> is small, the classes’ covariance structures are similar, so LDA’s pooled-covariance assumption is reasonable. LDA estimates fewer parameters, which usually means lower variance than QDA. QDA’s extra flexibility may not help much when the covariance matrices are nearly the same.</p>
 <p>When <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math> is large, the classes have different covariance structures. LDA’s pooled-covariance assumption is less accurate, and bias can increase. QDA can model the difference, which reduces the bias. However, QDA estimates more parameters, so it has higher variance. QDA does better when the reduction in bias is larger than the increase in variance.</p>
-<p>The eight noise covariates affect performance even though they contain no information about the class label because they add estimation variability.</p></li>
+<p>The eight noise covariates affect performance even though they contain no information about the class label because the models still have to estimate their means and covariances. Estimating these irrelevant values adds uncertainty, which can make predictions less accurate.</p></li>
 </ol>
 </section>
 <section id="question-4-create-and-use-an-ldaqda-analysis-skill" class="level2">
@@ -2695,6 +2750,113 @@ Observed   0   1   2   3   4   5   6   7   8   9
 <li><p><strong>Review and submit.</strong> Check the agent’s analysis and make any skill revisions using only training and cross-validation results. Append the final one-page analysis report and the complete contents of your <code>SKILL.md</code> to your homework report. State the file size and briefly explain how you enabled explicit invocation, including the prompt used to apply the skill. The one-page limit applies to the analysis report; the appended skill and this explanation are outside that limit.</p></li>
 </ol>
 <p>Your skill and analysis report will be reviewed and graded by other students through peer evaluation.</p>
+<section id="final-one-page-analysis-report" class="level3">
+<h3 class="anchored" data-anchor-id="final-one-page-analysis-report">Final one-page analysis report</h3>
+<p><strong>SAheart data and procedure.</strong> The analysis used all 462 observations and 9 numerical predictors, coding <code>famhist</code> as 1 for Absent and 2 for Present. The random seed was <code>43207</code>. A class-stratified 20% holdout reserved 92 observations for final evaluation and left 370 for training. Ordinary LDA (one pooled covariance matrix) and QDA (one covariance matrix per class), both with empirical class priors, were compared using the same stratified 5-fold cross-validation partitions within the training split. Model selection used mean fold misclassification rate only.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Candidate</th>
+<th style="text-align: right;">Mean 5-fold CV error</th>
+<th style="text-align: left;">Selection</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">LDA</td>
+<td style="text-align: right;">0.2729</td>
+<td style="text-align: left;">Selected</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">QDA</td>
+<td style="text-align: right;">0.2920</td>
+<td style="text-align: left;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img role="img" src="data:image/png;base64,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" class="img-fluid quarto-figure quarto-figure-center figure-img" width="595"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The lowest-CV-error candidate was <strong>LDA</strong> (CV error 0.2729). It was refit using all 370 training observations, then evaluated once on the untouched test split. The held-out test misclassification rate was <strong>0.3043</strong>.</p>
+<p>Rows below are observed classes; columns are predicted classes.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Test confusion matrix</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">Predicted 0</th>
+<th style="text-align: right;">Predicted 1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">0</td>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">1</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">16</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>This single holdout estimate has sampling uncertainty. Both methods assume class-conditional normal predictors; binary <code>famhist</code> does not follow a normal distribution, so this assumption is a limitation.</p>
+</section>
+<section id="skill-file-details" class="level3">
+<h3 class="anchored" data-anchor-id="skill-file-details">Skill file details</h3>
+<p>The complete <code>SKILL.md</code> is <strong>4,012 bytes</strong>. It is stored in <code>LDA-QDA-analysis</code>, outside the automatically discovered skill folders. Its frontmatter sets <code>user-invocable: true</code> and <code>disable-model-invocation: true</code>; I supplied it only after explicitly requesting it. The prompt used was: <strong>“Use LDA-QDA-analysis skill to analyze SAheart data from Question 1.”</strong></p>
+</section>
+<section id="complete-skill.md" class="level3">
+<h3 class="anchored" data-anchor-id="complete-skill.md">Complete <code>SKILL.md</code></h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="an">name:</span><span class="co"> lda-qda-analysis</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="an">description:</span><span class="co"> &quot;Use only when explicitly invoked to compare LDA/QDA classifiers, select a model with cross-validation, evaluate it once on a reserved test set, and write a concise statistical report.&quot;</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="an">user-invocable:</span><span class="co"> true</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="an">disable-model-invocation:</span><span class="co"> true</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a><span class="fu"># LDA/QDA Analysis</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>Use this workflow only when the user explicitly invokes this skill and supplies the dataset, response, and predictors. Do not assume variable names, class count, coding, or results. Ask for missing inputs before analysis. Use only LDA, QDA, or combinations of their predicted class probabilities as classifiers.</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="fu">## Analysis procedure</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>Identify the response, predictors, class labels, and any required coding. Check for missing/non-numeric predictors, class counts, and whether each class has enough training observations to estimate full covariance matrices. State problems and limitations rather than silently changing the data.</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>Set and report a random seed. Split off a test set before comparing or selecting models; stratify by class where practical. Do not inspect test labels or use test performance to select features, preprocessing, model settings, or the final model.</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a><span class="ss">3.  </span>Always include ordinary LDA and ordinary QDA as candidates. Additional candidates may use a lower-dimensional representation (such as PCA followed by LDA/QDA) or blend LDA/QDA class probabilities. Keep every classifier within those methods. State each candidate and its settings clearly.</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a><span class="ss">4.  </span>Compare candidates using the same cross-validation folds on the training split and misclassification rate as the selection metric. Choose folds and settings appropriate to the class counts. Fit all preprocessing, feature selection, and embeddings separately within each fold using only that fold&#39;s analysis portion; apply the fitted transformation to its validation portion. Do not let validation or test observations influence preprocessing estimates.</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a><span class="ss">5.  </span>Select the candidate with the lowest mean cross-validated misclassification rate. Report fold count, candidate CV errors, selection rule, and any ties or instability. Do not use the reserved test set to revise this choice.</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a><span class="ss">6.  </span>Refit the chosen model and all its preprocessing on the full training split. Evaluate it exactly once on the reserved test split. Report the test confusion matrix (observed rows, predicted columns) and test misclassification rate as the final estimated prediction error. Clearly distinguish CV selection results from this held-out estimate.</span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a><span class="ss">7.  </span>Verify that labels, factor/class order, dimensions, confusion-matrix orientation, and error denominators are correct. Do not claim a method works solely because fitting completed or report invented results. If execution is unavailable, provide reproducible code and mark results as not computed.</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a><span class="fu">## Report requirements</span></span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>Create the analysis report as a Quarto <span class="in">`.qmd`</span> file, following the structure and conventions of the user&#39;s homework <span class="in">`.qmd`</span> files. Configure it to render as <span class="in">`.html`</span>, run the document, and verify that the rendered HTML is current and opens successfully.</span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a>Produce a clearly readable analysis report that fits on at most one printed page. Include:</span>
+<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-28"><a href="#cb29-28" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>a compact table of candidate methods, their CV misclassification rates, and the selected model;</span>
+<span id="cb29-29"><a href="#cb29-29" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>one clearly labelled figure comparing candidate CV errors (or another informative, training/CV-only comparison);</span>
+<span id="cb29-30"><a href="#cb29-30" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>numerical model-fitting results, including sample sizes, seed, selected settings, CV error, and the once-only test error;</span>
+<span id="cb29-31"><a href="#cb29-31" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>a brief description of candidates and CV procedure, the selection, main findings, and limitations.</span>
+<span id="cb29-32"><a href="#cb29-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-33"><a href="#cb29-33" aria-hidden="true" tabindex="-1"></a>Keep the report concise; place code, detailed diagnostics, and the complete skill text outside the one-page report. Do not leak test-set information into the figure or model-selection discussion. Use accessible labels and distinguishable plot series. State when estimates are uncertain, covariance estimation is unstable, or model assumptions may be unsuitable.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
 </section>
 
 </main>
