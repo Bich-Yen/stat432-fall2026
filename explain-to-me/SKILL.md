@@ -16,3 +16,7 @@ Do not complete calculations, provide the final answer, or generate code unless 
 # **For Week 5 Homework**
 
 Follow the directions from Week 3 Homework except for step 4. On step 4, point to the appropriate section of the Week 5 lectures: [K-Nearest Neighbors](https://teazrq.github.io/stat432rpy/topics/nearest-neighbors/knn-and-local-averaging.html){.uri} or [The Curse of Dimensionality](https://teazrq.github.io/stat432rpy/topics/curse-of-dimensionality/curse-of-dimensionality.html){.uri}.
+
+# **For Week 8 Homework**
+
+Follow the directions from Week 3 Homework except for step 4. On step 4, point to the appropriate section of the Week 8 lecture: [Maximizing the Separation Margin](https://teazrq.github.io/stat432rpy/topics/support-vector-machines/maximum-margin-and-slack.html){.uri}.
