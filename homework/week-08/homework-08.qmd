@@ -1,0 +1,168 @@
+---
+title: "Homework 08"
+pagetitle: "Homework 08"
+body-classes: "lecture-page practice-page"
+format:
+  html:
+    embed-resources: true
+    html-math-method: mathml
+    page-layout: full
+    toc: true
+    toc-location: body
+    toc-title: "On this page"
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show the workflow"
+---
+
+The former kernel-tuning question has moved to Homework 09.
+
+Solutions for Questions 1 and 2 will be available after Monday, October 19, 2026. No solution can be provided for Question 3.
+
+For Questions 1 and 2, use either R or Python.
+
+## Question 1: Boundary and margin
+
+Use `margin-geometry-20.csv` from the combined ZIP, which contains 20 observations with predictors $x_1,x_2$ and class labels $y\in\{-1,1\}$. Consider the score
+
+$$f(x)=0.8x_1+0.6x_2.$$
+
+Since $\|(0.8,0.6)\|_2=1$, the lines $f(x)=\pm1$ are each a distance 1 from the decision boundary $f(x)=0$.
+
+a.  Calculate the distance from every observation to the decision boundary and its functional margin $yf(x)$. In a table, report these values and whether each observation is inside, on, or beyond the margin for its class. Compare $yf(x)$ with 1 to make this distinction.
+
+    Signed Distance: $\frac{f(x)}{||\beta||}$
+
+    Since the Euclidean norm of $\beta$ is $\sqrt{(0.8)^2 + (0.6)^2} = 1$, the signed distance simplifies to $f(x)$. The absolute value of the signed distance is the distance to the hyperplane (Week 8 Lecture: Maximizing the Separation Margin).
+
+    ```{r}
+    # Import the csv file
+    df_geo20 <- read.csv("data/margin-geometry-20.csv")
+
+    # Calculate the score
+    x1 <- df_geo20$x1
+    x2 <- df_geo20$x2
+    score <- 0.8 * x1 + 0.6 * x2
+
+    # Calculate the distance from every observation to the decision boundary
+    beta <- matrix(c(0.8, 0.6), nrow = 1, ncol = 2)
+    distance <- abs(score)
+
+    # Calculate functional margin
+    y <- df_geo20$y
+    func_margin <- y * score
+
+    # Compare each observation to the functional margin and determine if the observation is inside, on, or beyond the margin
+    compare_position <- rep(NA, times = length(score))
+
+    for (i in seq_along(compare_position)){
+      if (func_margin[i] < 1){
+        compare_position[i] = "Inside"
+      } else if (func_margin[i] == 1){
+        compare_position[i] = "On"
+      } else if (func_margin[i] > 1){
+        compare_position[i] = "Beyond"
+      }
+    }
+
+    data.frame(
+      distance = distance,
+      functional_margin = func_margin,
+      margin_position = compare_position
+    )
+    ```
+
+b.  Plot the observations, the boundary $f(x)=0$, and the margin lines $f(x)=\pm1$. Distinguish the two classes and identify the observations inside the margin in your plot.
+
+    To plot the boundary line, plug in $f(x) = 0$ and solve for $x_2$.
+
+    $$0 = 0.8x_1+0.6x_2.$$
+
+    $$-0.6x_2 = 0.8x_1$$
+
+    $$x_2 = -\frac{4}{3}x_1$$
+
+    To plot the margin lines, plug in $f(x) = \pm 1$ and solve for $x_2$.
+
+    $$\pm1 = 0.8x_1+0.6x_2$$
+
+    $$-0.6x_2 = 0.8x_1 \mp 1$$
+
+    $$x_2 = -\frac{4}{3}x_1 \pm -\frac{5}{3}$$
+
+    ```{r}
+    plot(x = x1, y = x2,
+         xlim = c(-3.2, 3.2), 
+         ylim = c(-3, 3),
+         col = ifelse(y == 1, "blue", "red"),
+         pch = 19)
+
+    # Plot the boundary line
+    abline(a = 0, b = -4/3, lwd = 2)
+
+    # Plot the margin lines
+    abline(a = -5/3, b = -4/3, lty = 3, lwd = 2)
+    abline(a = 5/3, b = -4/3, lty = 3, lwd = 2)
+
+    # Circle the observations that are on the margin lines
+    points(x1[compare_position == "On"], x2[compare_position == "On"],
+           pch = 1, cex = 2, lwd = 2)
+
+    legend(
+      "bottomleft",
+      c("Positive", "Negative", "Boundary", "Margins"),
+      col = c("blue", "red", "black", "black"),
+      pch = c(19, 19, NA, NA),
+      lty = c(NA, NA, 1, 3),
+      bty = "n"
+    )
+    ```
+
+c.  Report how many observations are inside, on, and beyond the margin. Which observations are misclassified by this decision rule?
+
+    ```{r}
+    # Count how many observations are inside, on, or beyond the margin
+    inside_count <- sum(compare_position == "Inside")
+    on_count <- sum(compare_position == "On")
+    beyond_count <- sum(compare_position == "Beyond")
+
+    data.frame(
+      inside = inside_count,
+      on = on_count,
+      beyond = beyond_count
+    )
+
+    # Find which observations are misclassified by the decision rule
+    predicted_class <- ifelse(score >= 0, 1, -1)
+    df_geo20$observation[predicted_class != y]
+    ```
+
+    Observations 10 and 20 are misclassified by this decision rule.
+
+Use the observation numbers supplied in the data. Set the $x_1$ axis to $[-3.2,3.2]$, set the $x_2$ axis to $[-3,3]$, and use an equal aspect ratio. Do not fit a new classifier for this question.
+
+## Question 2: Margin in four dimensions
+
+Use `margin-geometry-4d.csv` from the combined ZIP, which contains 50 observations with four predictors and class labels $y\in\{-1,1\}$. Consider the linear score
+
+$$f(\mathbf{x})=\beta_0+\mathbf{x}^{\mathsf T}\boldsymbol{\beta},
+\qquad
+\beta_0=-1,
+\quad
+\boldsymbol{\beta}=(1,2,-2,4)^{\mathsf T}.$$
+
+a.  Project the observations onto the direction of $\boldsymbol{\beta}$ and plot their positions on one axis. Distinguish the two classes and mark the decision boundary. Use the plot to calculate the geometric margin $M$, the distance from the boundary to the closest observation.
+
+b.  Express the same decision boundary using the SVM normalization in which the smallest functional margin $y_i f(\mathbf{x}_i)$ is set to 1. What are the corresponding values of $\boldsymbol{\beta}$ and $\beta_0$?
+
+## Question 3: Peer review of a Homework 7 skill
+
+The instructor's GitHub account, **rqzhu-aide**, will open a **GitHub Issue** in the repository containing your Homework 7 submission. It will link to **one** assigned student's repository.
+
+1.  **Use the skill.** Find the complete skill definition in the assigned student's Homework 7 report. Copy it without changes into a local `SKILL.md` file in your own folder. You do not need to install it. Give your agent the path to the file and explicitly ask it to follow that skill while analyzing the `SAheart` data, using the response and predictor coding from Homework 7. Provide the necessary data information, but no additional preferences about methods, figures, model selection, or report style. Let the skill direct the analysis.
+
+    Monitor the time, your token use, and your weekly quota while the agent works. If the run is taking too long or using your allowance too quickly, you may send a **steer message** asking the agent to finish immediately, or stop the run and summarize what you observed. A steer message redirects an agent while it is working; learn how to send one in your AI tool before starting.
+
+2.  **Write a peer review.** Read the student's submitted report and what the skill produced in your run. Give a brief overall assessment, followed by **three major items the author could improve**. You may comment on any aspect of the skill or report. For each item, explain what you observed, why it matters, and what you recommend changing. If you stopped the run early, explain where and why. Write the review yourself, without AI assistance.
+
+3.  **Share your review.** Open a GitHub Issue in the assigned student's Homework 7 repository containing your review. Copy the same review into your Homework 8 submission report and include a link to the GitHub Issue.
