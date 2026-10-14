@@ -1,0 +1,153 @@
+---
+title: "SAheart LDA/QDA Analysis"
+pagetitle: "SAheart LDA/QDA Analysis"
+format:
+  html:
+    embed-resources: true
+    page-layout: full
+    toc: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+<style>
+@media print {
+  body { font-size: 9pt; }
+  h1 { font-size: 17pt; margin: 0 0 5pt; }
+  h2 { font-size: 11pt; margin: 5pt 0 2pt; }
+  p { margin: 3pt 0; }
+  figure { margin: 2pt auto; }
+  img { max-height: 2.2in; }
+  table { font-size: 9pt; }
+}
+</style>
+
+```{r analysis_setup, include=FALSE}
+if (!requireNamespace("MASS", quietly = TRUE) ||
+    !requireNamespace("knitr", quietly = TRUE)) {
+  stop("This report requires the MASS and knitr R packages.")
+}
+
+seed <- 43207
+set.seed(seed)
+possible_data_paths <- c(
+  file.path("..", "homework", "week-07", "data", "saheart.csv"),
+  file.path("homework", "week-07", "data", "saheart.csv")
+)
+data_path <- possible_data_paths[file.exists(possible_data_paths)][1]
+if (is.na(data_path)) stop("Could not locate homework/week-07/data/saheart.csv")
+
+heart <- read.csv(data_path)
+heart$famhist <- ifelse(heart$famhist == "Absent", 1, 2)
+y <- factor(heart$chd, levels = c(0, 1))
+X <- as.matrix(heart[, names(heart) != "chd"])
+if (anyNA(X) || anyNA(y) || !is.numeric(X)) {
+  stop("Predictors and response must be complete, with numeric predictors.")
+}
+
+test_idx <- unlist(lapply(levels(y), function(class_label) {
+  class_idx <- which(y == class_label)
+  sample(class_idx, size = round(0.2 * length(class_idx)))
+}), use.names = FALSE)
+train_idx <- setdiff(seq_along(y), test_idx)
+X_train <- X[train_idx, , drop = FALSE]
+y_train <- droplevels(y[train_idx])
+
+folds <- 5L
+fold_id <- integer(length(train_idx))
+for (class_label in levels(y_train)) {
+  class_rows <- which(y_train == class_label)
+  fold_id[class_rows] <- sample(rep(seq_len(folds), length.out = length(class_rows)))
+}
+
+cv_fold_error <- matrix(
+  NA_real_, nrow = folds, ncol = 2,
+  dimnames = list(NULL, c("LDA", "QDA"))
+)
+for (fold in seq_len(folds)) {
+  analysis_rows <- which(fold_id != fold)
+  validation_rows <- which(fold_id == fold)
+
+  lda_fit <- MASS::lda(
+    x = X_train[analysis_rows, , drop = FALSE],
+    grouping = y_train[analysis_rows]
+  )
+  qda_fit <- MASS::qda(
+    x = X_train[analysis_rows, , drop = FALSE],
+    grouping = y_train[analysis_rows]
+  )
+  lda_pred <- predict(lda_fit, newdata = X_train[validation_rows, , drop = FALSE])$class
+  qda_pred <- predict(qda_fit, newdata = X_train[validation_rows, , drop = FALSE])$class
+  cv_fold_error[fold, "LDA"] <- mean(lda_pred != y_train[validation_rows])
+  cv_fold_error[fold, "QDA"] <- mean(qda_pred != y_train[validation_rows])
+}
+
+cv_error <- colMeans(cv_fold_error)
+selected_name <- names(which.min(cv_error))
+cv_table <- data.frame(
+  Candidate = names(cv_error),
+  Mean_CV_error = unname(cv_error),
+  Selection = ifelse(names(cv_error) == selected_name, "Selected", "")
+)
+
+plot_cv_errors <- function() {
+  plot(seq_along(cv_error), unname(cv_error),
+       type = "n", xaxt = "n", xlim = c(0.7, 2.3),
+       ylim = c(0, max(cv_error) * 1.25),
+       xlab = "Candidate classifier", ylab = "5-fold CV misclassification rate",
+       main = "Training-split cross-validation error")
+  axis(1, at = seq_along(cv_error), labels = names(cv_error))
+  points(seq_along(cv_error), unname(cv_error),
+         pch = c(16, 17), col = c("#176B5B", "#B34A2E"), cex = 1.5)
+}
+
+if (selected_name == "LDA") {
+  final_fit <- MASS::lda(x = X_train, grouping = y_train)
+} else {
+  final_fit <- MASS::qda(x = X_train, grouping = y_train)
+}
+test_pred <- predict(final_fit, newdata = X[test_idx, , drop = FALSE])$class
+test_truth <- y[test_idx]
+test_confusion <- table(
+  Observed = factor(test_truth, levels = levels(y)),
+  Predicted = factor(test_pred, levels = levels(y))
+)
+test_error <- mean(test_pred != test_truth)
+```
+
+## Data and procedure
+
+SAheart contains `r nrow(heart)` observations and `r ncol(X)` numerical predictors; `famhist` is coded Absent = 1 and Present = 2. The random seed was <code>43207</code>. A stratified 20% holdout reserved `r length(test_idx)` observations for one final evaluation and left `r length(train_idx)` for training. Ordinary LDA (one pooled covariance) and QDA (one covariance per class), both with empirical class priors, were compared using the same stratified 5-fold partitions within the training split. Selection used mean fold misclassification rate only.
+
+## Cross-validation and selection
+
+```{r cv_table}
+knitr::kable(cv_table, digits = 4, align = c("l", "r", "l"),
+            col.names = c("Candidate", "Mean 5-fold CV error", "Selection"))
+```
+
+```{r save_cv_figure, include=FALSE}
+png("saheart-cv-errors.png", width = 1200, height = 650, res = 150)
+plot_cv_errors()
+dev.off()
+```
+
+```{r cv_figure, fig.width=6.2, fig.height=2.4, fig.align="center"}
+plot_cv_errors()
+```
+
+The lowest-CV-error candidate was **`r selected_name`** (CV error `r sprintf("%.4f", min(cv_error))`). It was refit using all `r length(train_idx)` training observations, then evaluated once on the untouched test split. The held-out test misclassification rate was **`r sprintf("%.4f", test_error)`**.
+
+## Held-out test results
+
+Rows are observed classes; columns are predicted classes.
+
+```{r test_confusion}
+knitr::kable(as.data.frame.matrix(test_confusion),
+            col.names = c("Predicted 0", "Predicted 1"),
+            caption = "Test confusion matrix")
+```
+
+The selected model is preferred by cross-validation, not by its test result. The single test estimate has sampling uncertainty. LDA and QDA assume class-conditional normal predictors; binary `famhist` does not follow a normal distribution, so this modeling assumption is a limitation.

@@ -1,0 +1,577 @@
+---
+title: "Homework 07"
+pagetitle: "Homework 07"
+body-classes: "lecture-page practice-page"
+format:
+  html:
+    embed-resources: true
+    html-math-method: mathml
+    page-layout: full
+    toc: true
+    toc-location: body
+    toc-title: "On this page"
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show the workflow"
+---
+
+Use either R or Python.
+
+## Question 1: LDA
+
+Let's start by estimating the components of LDA. From the lecture notes, for each target point $\mathbf{x}_0$, we find the class label $k$ with the largest score
+
+$$\mathbf{x}_0^{\mathsf T}\boldsymbol{\Sigma}^{-1}\boldsymbol{\mu}_k
+-\frac12\boldsymbol{\mu}_k^{\mathsf T}\boldsymbol{\Sigma}^{-1}\boldsymbol{\mu}_k
++\log\pi_k.$$
+
+Thus, we need to estimate:
+
+- the prior probabilities $\pi_k$;
+- the mean vector (centroid) $\boldsymbol{\mu}_k$ for each class; and
+- the pooled covariance matrix $\boldsymbol{\Sigma}$.
+
+Use [saheart.csv](data/saheart.csv), the `SAheart` data from `ElemStatLearn`. The two classes are defined by `chd`, the coronary heart disease indicator. Use all nine other variables as numerical predictors, coding `famhist` as 1 for `Absent` and 2 for `Present`. The following code constructs an $n\times9$ predictor matrix $\mathbf{X}$ and an $n$-entry response vector $\mathbf{y}$, where $n$ is the number of observations.
+
+::: {.panel-tabset .sync-code-panels group="language"}
+### R
+
+``` r
+heart <- read.csv("data/saheart.csv")
+heart$famhist <- factor(heart$famhist, levels = c("Absent", "Present"))
+X <- data.matrix(heart[, names(heart) != "chd"])
+y <- heart$chd
+```
+
+### Python
+
+``` python
+import pandas as pd
+
+heart = pd.read_csv("data/saheart.csv")
+heart["famhist"] = heart["famhist"].map({"Absent": 1, "Present": 2})
+X = heart.drop(columns="chd").to_numpy()
+y = heart["chd"].to_numpy()
+```
+:::
+
+a.  Calculate the prior probabilities, class means, and pooled covariance matrix from these data. Use the pooled covariance denominator $n-K$ from the lecture, where $K=2$ is the number of classes.
+
+    ```{r}
+    # Use the provided R code to read the saheart.csv
+    heart <- read.csv("data/saheart.csv")
+    heart$famhist <- factor(heart$famhist, levels = c("Absent", "Present"))
+    X <- data.matrix(heart[, names(heart) != "chd"])
+    y <- heart$chd
+
+    # Calculate prior probailities
+    # pi_k_hat = # of observations in class k / n
+    n <- length(y)
+    pi_0_hat <- sum(y == 0) / n
+    paste("pi_0_hat: ", pi_0_hat)
+    pi_1_hat <- sum(y == 1) / n
+    paste("pi_1_hat: ", pi_1_hat)
+
+    # Calculate class means
+    mu0_hat <- colMeans(X[y == 0, ])
+    mu0_hat
+    mu1_hat <- colMeans(X[y == 1, ])
+    mu1_hat
+
+    # Calculate pooled covariance matrix (K = 2)
+    # 1 = sweeps across rows, 2 = sweeps across columns
+    K <- 2
+    C0_centered <- sweep(X[y == 0, ], 2, mu0_hat, "-")
+    C1_centered <- sweep(X[y == 1, ], 2, mu1_hat, "-")
+    Sigma_hat <- (crossprod(C0_centered) + crossprod(C1_centered)) / (n - K)
+    Sigma_hat
+    ```
+
+b.  Use your estimated values to predict the label of each observation in the training data. These are in-sample fitted labels. Provide the confusion matrix, with observed classes in rows and predicted classes in columns. Check that the dimensions of your matrices and vectors match. Calculate the scores yourself for this part.
+
+    ```{r}
+    # Prediction requires scoring every observation under both class possibilities
+    # C0_centered and C1_centered contain only observations that belong to their respective classes
+    X0 <- sweep(X, 2, mu0_hat, "-")
+    X1 <- sweep(X, 2, mu1_hat, "-")
+
+    # Compare the two fitted log scores
+    score0 <- -0.5 * rowSums(X0 * t(solve(Sigma_hat, t(X0)))) + log(pi_0_hat)
+    score1 <- -0.5 * rowSums(X1 * t(solve(Sigma_hat, t(X1)))) + log(pi_1_hat)
+    decision <- ifelse(score0 >= score1, 0, 1)
+
+    # Form the confusion matrix
+    # A confusion matirx counts how many observations in each actual class were assigned to each predicted class
+    table(Observed = y, Predicted = decision)
+    ```
+
+c.  Perform the same LDA analysis using `MASS::lda` in R or `LinearDiscriminantAnalysis(solver="svd")` in Python, using the same numerical predictors and empirical class priors. Provide the confusion matrix. Do the results match?
+
+    ```{r}
+    heart_lda <- MASS::lda(chd ~ ., data = heart)
+    heart_lda_pred <- predict(heart_lda, newdata = heart)$class
+    table(Observed = heart$chd, Predicted = heart_lda_pred)
+    ```
+
+    Yes, the results from parts (b) and (c) match.
+
+## Question 2: QDA and marginal screening
+
+In the lecture, ordinary QDA could not be fitted to the handwritten digit sample because its within-class covariance matrices were singular. Let's consider selecting fewer variables and see whether this helps. For this question, use the full [zip-train.csv.gz](data/zip-train.csv.gz) as the training data and [zip-test.csv.gz](data/zip-test.csv.gz) as the test data, with all ten digit classes. These are the original `zip.train` and `zip.test` data from `ElemStatLearn`. Each file has no header: the first column is the digit label and the remaining 256 columns are pixel values.
+
+Instead of using all 256 predictors, select the 40 with the largest marginal variances in the training data. Here, marginal variance means the variance of one pixel across all training observations. Use the original pixel values without standardizing them, and retain the same selected predictors in the test data.
+
+Use `MASS::qda` in R or `QuadraticDiscriminantAnalysis(tol=1e-8)` in Python.
+
+```{r}
+# Load the training and testing data
+train <- read.csv(gzfile("data/zip-train.csv.gz"), header = FALSE)
+test <- read.csv(gzfile("data/zip-test.csv.gz"), header = FALSE)
+
+# Remove the first column because it is only a digit label
+X_train <- as.matrix(train[, -1])
+X_test <- as.matrix(test[, -1])
+
+# Select 40 predictors with the largest marginal variances in the training data
+pixel_var <- apply(X_train, 2, var)
+top40 <- order(pixel_var, decreasing = TRUE)[1:40]
+
+X_train_40 <- X_train[, top40, drop = FALSE]
+X_test_40 <- X_test[, top40, drop = FALSE]
+```
+
+a.  Fit QDA using these 40 predictors and report the test confusion matrix, with observed classes in rows and predicted classes in columns. Also report the test misclassification rate.
+
+    ```{r}
+    # Digit labels are class categories, not numeric measurements
+    # Factor tells MASS::qda to treat digit labels as group names rather than numeric values
+    y_train <- factor(train[, 1])
+    y_test <- factor(test[, 1])
+
+    pixel_qda <- MASS::qda(x = X_train_40, grouping = y_train)
+    pixel_qda_pred <- predict(pixel_qda, newdata = X_test_40)$class
+
+    # Report the test confusion matrix
+    table(Observed = y_test, Predicted = pixel_qda_pred)
+
+    # Report the test misclassification rate
+    paste("Test Misclassification Rate: ", mean(pixel_qda_pred != y_test))
+    ```
+
+b.  Does the method work? Why do you think it works or does not work?
+
+    In the test confusion matrix, the diagonal entries represent counts that correctly classified images for each digit, and the non-diagonal entries represent counts for misclassifications. In order words, we want more counts in the diagonal entries and less counts in the non-diagonal entries. The test misclassification rate is about `r round(mean(pixel_qda_pred != y_test), digits = 4) * 100`%, which means QDA classified about 84.5% of test images correctly. This suggest that the QDA method worked as a classifier and made useful predictions, but it still made some errors in classifying digits.
+
+c.  Repeat the analysis using the 10 predictors with the largest marginal variances in the training data. How does the test misclassification rate compare with the 40-predictor version? Why do you think this happens?
+
+    ```{r}
+    # Select 10 predictors with the largest marginal variances in the training data
+    top10 <- order(pixel_var, decreasing = TRUE)[1:10]
+
+    X_train_10 <- X_train[, top10, drop = FALSE]
+    X_test_10 <- X_test[, top10, drop = FALSE]
+
+    # Fit QDA using 10 predictors
+    pixel_qda2 <- MASS::qda(x = X_train_10, grouping = y_train)
+    pixel_qda_pred2 <- predict(pixel_qda2, newdata = X_test_10)$class
+
+    # Report the test confusion matrix
+    table(Observed = y_test, Predicted = pixel_qda_pred2)
+
+    # Report the test misclassification rate
+    paste("Test Misclassification Rate: ", mean(pixel_qda_pred2 != y_test))
+    ```
+
+    The misclassification rate for using 10 predictors is about twice as high as the misclassification rate for using 40 predictors. From Week 7 Lecture: Discriminant Analysis, the cost of QDA's extra flexibility is "estimating a separate covariance requires enough information **within each class**". With only 10 predictors, QDA estimates smaller covariance matrices for each class, which could be more stable. However, those 10 pixel predictors may leave out useful information for classifying digits. High variance does not necessarily mean a pixel separates the digit classes well.
+
+    The QDA model with 40 predictors retains more useful information to classify digits. This outweighs the cost of extra estimation variability from fitting larger covariance matrices. Overall, losing information with 10 predictors hurts the model more than the smaller covariance estimates help.
+
+## Question 3: Compare LDA and QDA
+
+In this simulation, we will study how the relative performance of LDA and QDA changes with the true covariance structure. The parameter $\rho$ controls the distribution from which we generate the data; it is not a tuning parameter of LDA or QDA.
+
+Consider a classification problem with two equally likely classes, labeled 1 and 2, and $p=10$ covariates. The first two covariates have the class-conditional distributions
+
+$$\begin{pmatrix}X_1\\X_2\end{pmatrix}\mid Y=1
+\sim N_2\left(
+\begin{pmatrix}-1\\0\end{pmatrix},
+\begin{pmatrix}1&\rho\\\rho&1\end{pmatrix}
+\right),$$
+
+$$\begin{pmatrix}X_1\\X_2\end{pmatrix}\mid Y=2
+\sim N_2\left(
+\begin{pmatrix}1\\0\end{pmatrix},
+\begin{pmatrix}1&-\rho\\-\rho&1\end{pmatrix}
+\right).$$
+
+In both classes, the remaining eight covariates are independent standard normal variables, independent of the first two. Consider
+
+$$\rho\in\{0,0.2,0.4,0.6,0.8,0.9\}.$$
+
+For each value of $\rho$, generate 100 training observations and 1,000 independent test observations from each class. Fit ordinary LDA and QDA using all 10 covariates and equal class priors. Estimate the class means from the training data, with one pooled covariance matrix for LDA and one full covariance matrix per class for QDA. Set a random seed and report it.
+
+The random seed is 43201.
+
+a.  Generate one dataset for each value of $\rho$. Fit both methods and calculate their test misclassification rates. Within each setting, use the same training and test observations for the two methods.
+
+    ```{r}
+    set.seed(43201)
+    rho_values <- c(0, 0.2, 0.4, 0.6, 0.8, 0.9)
+    simulations <- vector("list", length(rho_values))
+
+    # Generate 100 training observations and 1000 test observations for each value of rho
+    for (i in seq_along(rho_values)){
+      rho <- rho_values[i]
+      
+      Sigma1 <- matrix(c(1, rho, rho, 1), nrow = 2)
+      Sigma2 <- matrix(c(1, -rho, -rho, 1), nrow = 2)
+      
+      Class1_train <- cbind(
+        MASS::mvrnorm(100, mu = c(-1, 0), Sigma = Sigma1),
+        matrix(rnorm(100 * 8), nrow = 100)
+      )
+      Class2_train <- cbind(
+        MASS::mvrnorm(100, mu = c(1, 0), Sigma = Sigma2),
+        matrix(rnorm(100 * 8), nrow = 100)
+      )
+      
+      Class1_test <- cbind(
+        MASS::mvrnorm(1000, mu = c(-1, 0), Sigma = Sigma1),
+        matrix(rnorm(1000 * 8), nrow = 1000)
+      )
+      Class2_test <- cbind(
+        MASS::mvrnorm(1000, mu = c(1, 0), Sigma = Sigma2),
+        matrix(rnorm(1000 * 8), nrow = 1000)
+      )
+      
+      X_train <- rbind(Class1_train, Class2_train)
+      y_train <- factor(c(rep(1, 100), rep(2, 100)))
+      
+      X_test <- rbind(Class1_test, Class2_test)
+      y_test <- factor(c(rep(1, 1000), rep(2, 1000)))
+      
+      simulations[[i]] <- list(
+        rho = rho,
+        X_train = X_train,
+        y_train = y_train,
+        X_test = X_test,
+        y_test = y_test
+      )
+    }
+
+    # Fit LDA and QDA for each value of rho
+    lda_results <- vector("list", length(simulations))
+    qda_results <- vector("list", length(simulations))
+
+    for (i in seq_along(simulations)){
+      sim <- simulations[[i]]
+      
+      # Fit LDA
+      lda_fit <- MASS::lda(
+        x = sim$X_train, 
+        grouping = sim$y_train, 
+        prior = c(0.5, 0.5)
+      )
+      
+      lda_pred <- predict(lda_fit, newdata = sim$X_test)$class
+      
+      lda_results[[i]] <- list(
+        rho = sim$rho,
+        confusion = table(Observed = sim$y_test, Predicted = lda_pred),
+        test_misclass_rate = mean(lda_pred != sim$y_test)
+      )
+      
+      # Fit QDA
+      qda_fit <- MASS::qda(
+        x = sim$X_train, 
+        grouping = sim$y_train, 
+        prior = c(0.5, 0.5)
+      )
+      
+      qda_pred <- predict(qda_fit, newdata = sim$X_test)$class
+      
+      qda_results[[i]] <- list(
+        rho = sim$rho,
+        confusion = table(Observed = sim$y_test, Predicted = qda_pred),
+        test_misclass_rate = mean(qda_pred != sim$y_test)
+      )
+    }
+
+    # Estimate the class means from the training data, with one pooled covariance matrix for LDA and one full covariance matrix per class for QDA.
+    X_train1 <- X_train[y_train == "1", , drop = FALSE]
+    X_train2 <- X_train[y_train == "2", , drop = FALSE]
+
+    mu1_hat <- colMeans(X_train1)
+    mu2_hat <- colMeans(X_train2)
+
+    # Calculate pooled covariance matrix for LDA
+    C1_centered <- sweep(X_train1, 2, mu1_hat, "-")
+    C2_centered <- sweep(X_train2, 2, mu2_hat, "-")
+    Sigma_hat_lda <- (crossprod(C1_centered) + crossprod(C2_centered)) / (nrow(X_train) - 2)
+
+    # Calculate full covariance matrix per class for QDA
+    Sigma1_hat_qda <- cov(X_train1)
+    Sigma2_hat_qda <- cov(X_train2)
+
+    # Output the test classification rates
+    test_misclass_results <- data.frame(
+      rho = rho_values,
+      LDA_test_error = vapply(lda_results, '[[', numeric(1), "test_misclass_rate"),
+      QDA_test_error = vapply(qda_results, '[[', numeric(1), "test_misclass_rate")
+    )
+    test_misclass_results
+    ```
+
+b.  At each fixed value of $\rho$, repeat the experiment 50 times, generating new training and test observations in each repetition. Plot average test error against $\rho$ in one figure, with one curve for LDA and one for QDA. These curves compare performance across different data-generating distributions.
+
+    ```{r}
+    nsim <- 50
+
+    lda_errors <- matrix(NA_real_, nrow = length(rho_values), ncol = nsim)
+    qda_errors <- matrix(NA_real_, nrow = length(rho_values), ncol = nsim)
+
+    for (i in seq_along(rho_values)){
+      rho <- rho_values[i]
+      
+      Sigma1 <- matrix(c(1, rho, rho, 1), nrow = 2)
+      Sigma2 <- matrix(c(1, -rho, -rho, 1), nrow = 2)
+      
+      for (m in seq_len(nsim)){
+        Class1_train <- cbind(
+          MASS::mvrnorm(100, mu = c(-1, 0), Sigma = Sigma1),
+          matrix(rnorm(100 * 8), nrow = 100)
+        )
+        Class2_train <- cbind(
+          MASS::mvrnorm(100, mu = c(1, 0), Sigma = Sigma2),
+          matrix(rnorm(100 * 8), nrow = 100)
+        )
+        
+        Class1_test <- cbind(
+          MASS::mvrnorm(1000, mu = c(-1, 0), Sigma = Sigma1),
+          matrix(rnorm(1000 * 8), nrow = 1000)
+        )
+        Class2_test <- cbind(
+          MASS::mvrnorm(1000, mu = c(1, 0), Sigma = Sigma2),
+          matrix(rnorm(1000 * 8), nrow = 1000)
+        )
+        
+        X_train <- rbind(Class1_train, Class2_train)
+        y_train <- factor(c(rep(1, 100), rep(2, 100)))
+        
+        X_test <- rbind(Class1_test, Class2_test)
+        y_test <- factor(c(rep(1, 1000), rep(2, 1000)))
+        
+        # Fit LDA and QDA
+        lda_fit <- MASS::lda(x = X_train, grouping = y_train, prior = c(0.5, 0.5))
+        qda_fit <- MASS::qda(x = X_train, grouping = y_train, prior = c(0.5, 0.5))
+        
+        # Calculate test misclassification rate for LDA and QDA
+        lda_pred <- predict(lda_fit, newdata = X_test)$class
+        qda_pred <- predict(qda_fit, newdata = X_test)$class
+        
+        lda_errors[i, m] <- mean(lda_pred != y_test)
+        qda_errors[i, m] <- mean(qda_pred != y_test)
+      }
+    }
+
+    # Plot average test error against rho
+    lda_avg <- rowMeans(lda_errors)
+    qda_avg <- rowMeans(qda_errors)
+
+    plot(x = rho_values, y = lda_avg,
+         main = "Average test error vs. rho",
+         xlab = "rho",
+         ylab = "Test error",
+         ylim = range(lda_avg, qda_avg),
+         type = "b",
+         pch = 16,
+         col = "deepskyblue")
+
+    points(x = rho_values, y = qda_avg,
+           pch = 17,
+           col = "darkorange")
+    lines(x = rho_values, y = qda_avg,
+          pch = 17, 
+          col = "darkorange")
+
+    legend(
+      "bottomleft",
+      legend = c("LDA", "QDA"),
+      col = c("deepskyblue", "darkorange"),
+      pch = c(16, 17),
+      lty = 1
+    )
+    ```
+
+c.  Compare the two methods at small and large values of $\rho$. How does changing the true covariance structure affect their relative performance? Explain the pattern using their covariance assumptions and the bias-variance trade-off. How can the eight noise covariates affect performance even though they contain no information about the class label?
+
+    At small values of $\rho$, the LDA model generally has a lower average test error than the QDA model. As $\rho$ increases, the average test error for LDA plateaus whereas the average test error for QDA decreases. Eventually, at large values of $\rho$, the QDA model has a lower average test error than the LDA model.
+
+    When $\rho$ is small, the classes' covariance structures are similar, so LDA's pooled-covariance assumption is reasonable. LDA estimates fewer parameters, which usually means lower variance than QDA. QDA's extra flexibility may not help much when the covariance matrices are nearly the same.
+
+    When $\rho$ is large, the classes have different covariance structures. LDA's pooled-covariance assumption is less accurate, and bias can increase. QDA can model the difference, which reduces the bias. However, QDA estimates more parameters, so it has higher variance. QDA does better when the reduction in bias is larger than the increase in variance.
+
+    The eight noise covariates affect performance even though they contain no information about the class label because the models still have to estimate their means and covariances. Estimating these irrelevant values adds uncertainty, which can make predictions less accurate.
+
+## Question 4: Create and use an LDA/QDA analysis skill
+
+In Homework 5, you created a skill for formatting plots. Now create a reusable skill that guides an AI agent through an LDA/QDA analysis and produces a concise statistical report. You may work with AI to design and write the skill; you do not need to write every line yourself.
+
+a.  **Define the skill.** Write a single `SKILL.md` file no larger than **5 KB (5,000 bytes)**. Define the agent's behavior, analysis guidelines, and expected report structure. Keep the skill independent of this question: provide the dataset, response, and predictors separately when invoking it. The skill may guide the agent to explore lower-dimensional representations, such as principal component analysis (PCA), or to blend the class probabilities predicted by LDA and QDA. Keep all classifiers based on LDA, QDA, or their combination. Configure the skill to load **only when you explicitly invoke it**. Use your AI tool's invocation settings, or keep the file outside automatically loaded skill folders and supply it only in an explicit request.
+
+Your skill must require a clearly readable analysis report of **at most one printed page**, containing a figure, a table, and numerical model-fitting results. You may specify the type and style of figures and tables you want the AI to produce. All instructions in the skill must be independent of the actual dataset, its variable names, and its observed results. The report should briefly describe the candidate models, the cross-validation procedure and results, the selected model, and its estimated prediction error. It should explain the main findings and any limitations.
+
+b.  **Apply the skill.** Explicitly invoke your skill to analyze the `SAheart` data from Question 1, using the same response and predictor coding. Ask the agent to seek the best predictive performance within the LDA/QDA methods allowed by your skill. Include ordinary LDA and QDA as comparisons; the extensions above are optional. Reserve a test set before choosing models. Use the same cross-validation folds within the training data to compare candidates and select any settings. Estimate any preprocessing, including an embedding, using only the training observations in each fold. Refit the selected model and preprocessing on all training observations, then evaluate the fitted classifier once on the reserved test set. Use misclassification rate to compare performance, and report your random seed.
+
+c.  **Review and submit.** Check the agent's analysis and make any skill revisions using only training and cross-validation results. Append the final one-page analysis report and the complete contents of your `SKILL.md` to your homework report. State the file size and briefly explain how you enabled explicit invocation, including the prompt used to apply the skill. The one-page limit applies to the analysis report; the appended skill and this explanation are outside that limit.
+
+Your skill and analysis report will be reviewed and graded by other students through peer evaluation.
+
+### Final one-page analysis report
+
+```{r q4_analysis_setup, include=FALSE}
+if (!requireNamespace("MASS", quietly = TRUE) ||
+    !requireNamespace("knitr", quietly = TRUE)) {
+  stop("This report requires the MASS and knitr R packages.")
+}
+
+seed <- 43207
+set.seed(seed)
+heart <- read.csv("data/saheart.csv")
+heart$famhist <- ifelse(heart$famhist == "Absent", 1, 2)
+y <- factor(heart$chd, levels = c(0, 1))
+X <- as.matrix(heart[, names(heart) != "chd"])
+if (anyNA(X) || anyNA(y) || !is.numeric(X)) {
+  stop("Predictors and response must be complete, with numeric predictors.")
+}
+
+test_idx <- unlist(lapply(levels(y), function(class_label) {
+  class_idx <- which(y == class_label)
+  sample(class_idx, size = round(0.2 * length(class_idx)))
+}), use.names = FALSE)
+train_idx <- setdiff(seq_along(y), test_idx)
+X_train <- X[train_idx, , drop = FALSE]
+y_train <- droplevels(y[train_idx])
+
+folds <- 5L
+fold_id <- integer(length(train_idx))
+for (class_label in levels(y_train)) {
+  class_rows <- which(y_train == class_label)
+  fold_id[class_rows] <- sample(rep(seq_len(folds), length.out = length(class_rows)))
+}
+
+cv_fold_error <- matrix(
+  NA_real_, nrow = folds, ncol = 2,
+  dimnames = list(NULL, c("LDA", "QDA"))
+)
+for (fold in seq_len(folds)) {
+  analysis_rows <- which(fold_id != fold)
+  validation_rows <- which(fold_id == fold)
+
+  lda_fit <- MASS::lda(
+    x = X_train[analysis_rows, , drop = FALSE],
+    grouping = y_train[analysis_rows]
+  )
+  qda_fit <- MASS::qda(
+    x = X_train[analysis_rows, , drop = FALSE],
+    grouping = y_train[analysis_rows]
+  )
+  lda_pred <- predict(lda_fit, newdata = X_train[validation_rows, , drop = FALSE])$class
+  qda_pred <- predict(qda_fit, newdata = X_train[validation_rows, , drop = FALSE])$class
+  cv_fold_error[fold, "LDA"] <- mean(lda_pred != y_train[validation_rows])
+  cv_fold_error[fold, "QDA"] <- mean(qda_pred != y_train[validation_rows])
+}
+
+cv_error <- colMeans(cv_fold_error)
+selected_name <- names(which.min(cv_error))
+cv_table <- data.frame(
+  Candidate = names(cv_error),
+  Mean_CV_error = unname(cv_error),
+  Selection = ifelse(names(cv_error) == selected_name, "Selected", "")
+)
+
+if (selected_name == "LDA") {
+  final_fit <- MASS::lda(x = X_train, grouping = y_train)
+} else {
+  final_fit <- MASS::qda(x = X_train, grouping = y_train)
+}
+test_pred <- predict(final_fit, newdata = X[test_idx, , drop = FALSE])$class
+test_truth <- y[test_idx]
+test_confusion <- table(
+  Observed = factor(test_truth, levels = levels(y)),
+  Predicted = factor(test_pred, levels = levels(y))
+)
+test_error <- mean(test_pred != test_truth)
+```
+
+**SAheart data and procedure.** The analysis used all `r nrow(heart)` observations and `r ncol(X)` numerical predictors, coding `famhist` as 1 for Absent and 2 for Present. The random seed was <code>43207</code>. A class-stratified 20% holdout reserved `r length(test_idx)` observations for final evaluation and left `r length(train_idx)` for training. Ordinary LDA (one pooled covariance matrix) and QDA (one covariance matrix per class), both with empirical class priors, were compared using the same stratified 5-fold cross-validation partitions within the training split. Model selection used mean fold misclassification rate only.
+
+```{r q4_cv_table, echo=FALSE}
+knitr::kable(cv_table, digits = 4, align = c("l", "r", "l"),
+            col.names = c("Candidate", "Mean 5-fold CV error", "Selection"))
+```
+
+```{r q4_cv_plot, echo=FALSE, fig.width=6.2, fig.height=2.4, fig.align="center"}
+plot(seq_along(cv_error), unname(cv_error),
+     type = "n", xaxt = "n", xlim = c(0.7, 2.3),
+     ylim = c(0, max(cv_error) * 1.25),
+     xlab = "Candidate classifier", ylab = "5-fold CV misclassification rate",
+     main = "Training-split cross-validation error")
+axis(1, at = seq_along(cv_error), labels = names(cv_error))
+points(seq_along(cv_error), unname(cv_error),
+       pch = c(16, 17), col = c("#176B5B", "#B34A2E"), cex = 1.5)
+```
+
+The lowest-CV-error candidate was **`r selected_name`** (CV error `r sprintf("%.4f", min(cv_error))`). It was refit using all `r length(train_idx)` training observations, then evaluated once on the untouched test split. The held-out test misclassification rate was **`r sprintf("%.4f", test_error)`**.
+
+Rows below are observed classes; columns are predicted classes.
+
+```{r q4_test_confusion, echo=FALSE}
+knitr::kable(as.data.frame.matrix(test_confusion),
+            col.names = c("Predicted 0", "Predicted 1"),
+            caption = "Test confusion matrix")
+```
+
+This single holdout estimate has sampling uncertainty. Both methods assume class-conditional normal predictors; binary `famhist` does not follow a normal distribution, so this assumption is a limitation.
+
+### Skill file details
+
+The complete `SKILL.md` is **4,012 bytes**. It is stored in `LDA-QDA-analysis`, outside the automatically discovered skill folders. Its frontmatter sets `user-invocable: true` and `disable-model-invocation: true`; I supplied it only after explicitly requesting it. The prompt used was: **“Use LDA-QDA-analysis skill to analyze SAheart data from Question 1.”**
+
+### Complete `SKILL.md`
+
+``` markdown
+---
+name: lda-qda-analysis
+description: "Use only when explicitly invoked to compare LDA/QDA classifiers, select a model with cross-validation, evaluate it once on a reserved test set, and write a concise statistical report."
+user-invocable: true
+disable-model-invocation: true
+---
+
+# LDA/QDA Analysis
+
+Use this workflow only when the user explicitly invokes this skill and supplies the dataset, response, and predictors. Do not assume variable names, class count, coding, or results. Ask for missing inputs before analysis. Use only LDA, QDA, or combinations of their predicted class probabilities as classifiers.
+
+## Analysis procedure
+
+1.  Identify the response, predictors, class labels, and any required coding. Check for missing/non-numeric predictors, class counts, and whether each class has enough training observations to estimate full covariance matrices. State problems and limitations rather than silently changing the data.
+2.  Set and report a random seed. Split off a test set before comparing or selecting models; stratify by class where practical. Do not inspect test labels or use test performance to select features, preprocessing, model settings, or the final model.
+3.  Always include ordinary LDA and ordinary QDA as candidates. Additional candidates may use a lower-dimensional representation (such as PCA followed by LDA/QDA) or blend LDA/QDA class probabilities. Keep every classifier within those methods. State each candidate and its settings clearly.
+4.  Compare candidates using the same cross-validation folds on the training split and misclassification rate as the selection metric. Choose folds and settings appropriate to the class counts. Fit all preprocessing, feature selection, and embeddings separately within each fold using only that fold's analysis portion; apply the fitted transformation to its validation portion. Do not let validation or test observations influence preprocessing estimates.
+5.  Select the candidate with the lowest mean cross-validated misclassification rate. Report fold count, candidate CV errors, selection rule, and any ties or instability. Do not use the reserved test set to revise this choice.
+6.  Refit the chosen model and all its preprocessing on the full training split. Evaluate it exactly once on the reserved test split. Report the test confusion matrix (observed rows, predicted columns) and test misclassification rate as the final estimated prediction error. Clearly distinguish CV selection results from this held-out estimate.
+7.  Verify that labels, factor/class order, dimensions, confusion-matrix orientation, and error denominators are correct. Do not claim a method works solely because fitting completed or report invented results. If execution is unavailable, provide reproducible code and mark results as not computed.
+
+## Report requirements
+
+Create the analysis report as a Quarto `.qmd` file, following the structure and conventions of the user's homework `.qmd` files. Configure it to render as `.html`, run the document, and verify that the rendered HTML is current and opens successfully.
+
+Produce a clearly readable analysis report that fits on at most one printed page. Include:
+
+- a compact table of candidate methods, their CV misclassification rates, and the selected model;
+- one clearly labelled figure comparing candidate CV errors (or another informative, training/CV-only comparison);
+- numerical model-fitting results, including sample sizes, seed, selected settings, CV error, and the once-only test error;
+- a brief description of candidates and CV procedure, the selection, main findings, and limitations.
+
+Keep the report concise; place code, detailed diagnostics, and the complete skill text outside the one-page report. Do not leak test-set information into the figure or model-selection discussion. Use accessible labels and distinguishable plot series. State when estimates are uncertain, covariance estimation is unstable, or model assumptions may be unsuitable.
+```
