@@ -29,6 +29,8 @@ $$f(x)=0.8x_1+0.6x_2.$$
 
 Since $\|(0.8,0.6)\|_2=1$, the lines $f(x)=\pm1$ are each a distance 1 from the decision boundary $f(x)=0$.
 
+Use the observation numbers supplied in the data. Set the $x_1$ axis to $[-3.2,3.2]$, set the $x_2$ axis to $[-3,3]$, and use an equal aspect ratio. Do not fit a new classifier for this question.
+
 a.  Calculate the distance from every observation to the decision boundary and its functional margin $yf(x)$. In a table, report these values and whether each observation is inside, on, or beyond the margin for its class. Compare $yf(x)$ with 1 to make this distinction.
 
     Signed Distance: $\frac{f(x)}{||\beta||}$
@@ -137,9 +139,7 @@ c.  Report how many observations are inside, on, and beyond the margin. Which ob
     df_geo20$observation[predicted_class != y]
     ```
 
-    Observations 10 and 20 are misclassified by this decision rule.
-
-Use the observation numbers supplied in the data. Set the $x_1$ axis to $[-3.2,3.2]$, set the $x_2$ axis to $[-3,3]$, and use an equal aspect ratio. Do not fit a new classifier for this question.
+    Observations 10 and 20 are misclassified by this decision rule. We can visually see this on the plot above. There is one red observation that crosses the boundary line towards the blue observations, and there is one blue observation that crosses the boundary line towards the red observations.
 
 ## Question 2: Margin in four dimensions
 
@@ -153,7 +153,68 @@ $$f(\mathbf{x})=\beta_0+\mathbf{x}^{\mathsf T}\boldsymbol{\beta},
 
 a.  Project the observations onto the direction of $\boldsymbol{\beta}$ and plot their positions on one axis. Distinguish the two classes and mark the decision boundary. Use the plot to calculate the geometric margin $M$, the distance from the boundary to the closest observation.
 
+    ```{r}
+    # Import the csv file
+    df_geo4d <- read.csv("data/margin-geometry-4d.csv")
+    x1 <- df_geo4d$x1
+    x2 <- df_geo4d$x2
+    x3 <- df_geo4d$x3
+    x4 <- df_geo4d$x4
+    X <- cbind(x1, x2, x3, x4)
+
+    beta0 <- -1
+    beta <- matrix(c(1, 2, -2, 4))
+
+    y <- df_geo4d$y
+      
+    # Use signed distance formula to calculate projection
+    projection <- (beta0 + (X %*% beta)) / norm(beta, type = "F")
+
+    # Plot projection positions on on axis
+    plot(projection, rep(0, length(projection)),
+         xlab = "signed distance", 
+         ylab = "",
+         col = ifelse(y == 1, "blue", "red"),
+         pch = 19)
+
+    # On the decision boundary, f(x) = 0, so the signed distance is 0
+    abline(v = 0, lwd = 2)
+
+    legend(
+      "bottomleft",
+      c("Positive", "Negative", "Boundary"),
+      col = c("blue", "red", "black"),
+      pch = c(19, 19, NA),
+      lty = c(NA, NA, 1),
+      bty = "n"
+    )
+
+    # Calculate geometric margin (smallest distance between boundary and observation)
+    # Absolute value of signed distance is the distance to the hyperplane
+    M <- min(abs(projection))
+    paste("Geometric margin M =", M)
+    ```
+
 b.  Express the same decision boundary using the SVM normalization in which the smallest functional margin $y_i f(\mathbf{x}_i)$ is set to 1. What are the corresponding values of $\boldsymbol{\beta}$ and $\beta_0$?
+
+    Find the smallest margin under the given score, then rescale $\boldsymbol{\beta}$ and $\beta_0$ so the minimum functional margin becomes 1.
+
+    ```{r}
+    # Find the smallest margin
+    fx <- beta0 + X %*% beta
+    min_margin <- min(y * fx)
+    scale <- 1 / min_margin
+
+    beta0_SVM <- scale * beta0
+    beta_SVM <- scale * beta
+    fx_SVM <- beta0_SVM + X %*% beta_SVM
+
+    # Check if the minimum functional margin is equal to 1
+    check_min_margin <- min(y * fx_SVM)
+    paste("The minimum functional margin is", check_min_margin)
+    ```
+
+    The rescaled values are $\quad \beta_0 = -0.2, \quad \beta = (0.2, 0.4, -0.4, 0.8)^T$.
 
 ## Question 3: Peer review of a Homework 7 skill
 
