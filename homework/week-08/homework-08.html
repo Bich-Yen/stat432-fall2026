@@ -2356,21 +2356,30 @@ vertical-align: -.125em;
 </figure>
 </div>
 </div>
-</div></li>
+<details class="code-fold">
+<summary>Show the workflow</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Identify the observations inside the margin of your plot</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>df_geo20<span class="sc">$</span>observation[compare_position <span class="sc">==</span> <span class="st">&quot;Inside&quot;</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1]  8  9 10 18 19 20</code></pre>
+</div>
+</div>
+<p>The observations inside the margins are 8, 9, 10, 18, 19, and 20. These can be seen as three red dots and three blue dots inside the dotted lines on the graph.</p></li>
 <li><p>Report how many observations are inside, on, and beyond the margin. Which observations are misclassified by this decision rule?</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count how many observations are inside, on, or beyond the margin</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>inside_count <span class="ot">&lt;-</span> <span class="fu">sum</span>(compare_position <span class="sc">==</span> <span class="st">&quot;Inside&quot;</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>on_count <span class="ot">&lt;-</span> <span class="fu">sum</span>(compare_position <span class="sc">==</span> <span class="st">&quot;On&quot;</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>beyond_count <span class="ot">&lt;-</span> <span class="fu">sum</span>(compare_position <span class="sc">==</span> <span class="st">&quot;Beyond&quot;</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">inside =</span> inside_count,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">on =</span> on_count,</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">beyond =</span> beyond_count</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count how many observations are inside, on, or beyond the margin</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>inside_count <span class="ot">&lt;-</span> <span class="fu">sum</span>(compare_position <span class="sc">==</span> <span class="st">&quot;Inside&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>on_count <span class="ot">&lt;-</span> <span class="fu">sum</span>(compare_position <span class="sc">==</span> <span class="st">&quot;On&quot;</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>beyond_count <span class="ot">&lt;-</span> <span class="fu">sum</span>(compare_position <span class="sc">==</span> <span class="st">&quot;Beyond&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">inside =</span> inside_count,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">on =</span> on_count,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">beyond =</span> beyond_count</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  inside on beyond
@@ -2378,9 +2387,9 @@ vertical-align: -.125em;
 </div>
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find which observations are misclassified by the decision rule</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>predicted_class <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(score <span class="sc">&gt;=</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>df_geo20<span class="sc">$</span>observation[predicted_class <span class="sc">!=</span> y]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find which observations are misclassified by the decision rule</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>predicted_class <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(score <span class="sc">&gt;=</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>df_geo20<span class="sc">$</span>observation[predicted_class <span class="sc">!=</span> y]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] 10 20</code></pre>
@@ -2402,40 +2411,40 @@ vertical-align: -.125em;
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import the csv file</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df_geo4d <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/margin-geometry-4d.csv&quot;</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>x1 <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>x1</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>x2 <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>x2</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>x3 <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>x3</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>x4 <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>x4</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(x1, x2, x3, x4)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>beta0 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">4</span>))</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>y</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Use signed distance formula to calculate projection</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>projection <span class="ot">&lt;-</span> (beta0 <span class="sc">+</span> (X <span class="sc">%*%</span> beta)) <span class="sc">/</span> <span class="fu">norm</span>(beta, <span class="at">type =</span> <span class="st">&quot;F&quot;</span>)</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot projection positions on on axis</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(projection, <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(projection)),</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;signed distance&quot;</span>, </span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;&quot;</span>,</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="fu">ifelse</span>(y <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;blue&quot;</span>, <span class="st">&quot;red&quot;</span>),</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>     <span class="at">pch =</span> <span class="dv">19</span>)</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a><span class="co"># On the decision boundary, f(x) = 0, so the signed distance is 0</span></span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="dv">0</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;bottomleft&quot;</span>,</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;Positive&quot;</span>, <span class="st">&quot;Negative&quot;</span>, <span class="st">&quot;Boundary&quot;</span>),</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;blue&quot;</span>, <span class="st">&quot;red&quot;</span>, <span class="st">&quot;black&quot;</span>),</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">19</span>, <span class="dv">19</span>, <span class="cn">NA</span>),</span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">lty =</span> <span class="fu">c</span>(<span class="cn">NA</span>, <span class="cn">NA</span>, <span class="dv">1</span>),</span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">bty =</span> <span class="st">&quot;n&quot;</span></span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import the csv file</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df_geo4d <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;data/margin-geometry-4d.csv&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>x1 <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>x1</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>x2 <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>x2</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>x3 <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>x3</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>x4 <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>x4</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(x1, x2, x3, x4)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>beta0 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="sc">-</span><span class="dv">2</span>, <span class="dv">4</span>))</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> df_geo4d<span class="sc">$</span>y</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Use signed distance formula to calculate projection</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>projection <span class="ot">&lt;-</span> (beta0 <span class="sc">+</span> (X <span class="sc">%*%</span> beta)) <span class="sc">/</span> <span class="fu">norm</span>(beta, <span class="at">type =</span> <span class="st">&quot;F&quot;</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot projection positions on on axis</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(projection, <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(projection)),</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;signed distance&quot;</span>, </span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;&quot;</span>,</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>     <span class="at">col =</span> <span class="fu">ifelse</span>(y <span class="sc">==</span> <span class="dv">1</span>, <span class="st">&quot;blue&quot;</span>, <span class="st">&quot;red&quot;</span>),</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>     <span class="at">pch =</span> <span class="dv">19</span>)</span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="co"># On the decision boundary, f(x) = 0, so the signed distance is 0</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> <span class="dv">0</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(</span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;bottomleft&quot;</span>,</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;Positive&quot;</span>, <span class="st">&quot;Negative&quot;</span>, <span class="st">&quot;Boundary&quot;</span>),</span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;blue&quot;</span>, <span class="st">&quot;red&quot;</span>, <span class="st">&quot;black&quot;</span>),</span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">19</span>, <span class="dv">19</span>, <span class="cn">NA</span>),</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">lty =</span> <span class="fu">c</span>(<span class="cn">NA</span>, <span class="cn">NA</span>, <span class="dv">1</span>),</span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">bty =</span> <span class="st">&quot;n&quot;</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -2446,10 +2455,10 @@ vertical-align: -.125em;
 </div>
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate geometric margin (smallest distance between boundary and observation)</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Absolute value of signed distance is the distance to the hyperplane</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">abs</span>(projection))</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Geometric margin M =&quot;</span>, M)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate geometric margin (smallest distance between boundary and observation)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Absolute value of signed distance is the distance to the hyperplane</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">abs</span>(projection))</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;Geometric margin M =&quot;</span>, M)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] &quot;Geometric margin M = 1&quot;</code></pre>
@@ -2460,18 +2469,18 @@ vertical-align: -.125em;
 <div class="cell">
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the smallest margin</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>fx <span class="ot">&lt;-</span> beta0 <span class="sc">+</span> X <span class="sc">%*%</span> beta</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>min_margin <span class="ot">&lt;-</span> <span class="fu">min</span>(y <span class="sc">*</span> fx)</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>scale <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> min_margin</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>beta0_SVM <span class="ot">&lt;-</span> scale <span class="sc">*</span> beta0</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>beta_SVM <span class="ot">&lt;-</span> scale <span class="sc">*</span> beta</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>fx_SVM <span class="ot">&lt;-</span> beta0_SVM <span class="sc">+</span> X <span class="sc">%*%</span> beta_SVM</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the minimum functional margin is equal to 1</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>check_min_margin <span class="ot">&lt;-</span> <span class="fu">min</span>(y <span class="sc">*</span> fx_SVM)</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;The minimum functional margin is&quot;</span>, check_min_margin)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find the smallest margin</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>fx <span class="ot">&lt;-</span> beta0 <span class="sc">+</span> X <span class="sc">%*%</span> beta</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>min_margin <span class="ot">&lt;-</span> <span class="fu">min</span>(y <span class="sc">*</span> fx)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>scale <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> min_margin</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>beta0_SVM <span class="ot">&lt;-</span> scale <span class="sc">*</span> beta0</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>beta_SVM <span class="ot">&lt;-</span> scale <span class="sc">*</span> beta</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>fx_SVM <span class="ot">&lt;-</span> beta0_SVM <span class="sc">+</span> X <span class="sc">%*%</span> beta_SVM</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the minimum functional margin is equal to 1</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>check_min_margin <span class="ot">&lt;-</span> <span class="fu">min</span>(y <span class="sc">*</span> fx_SVM)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="fu">paste</span>(<span class="st">&quot;The minimum functional margin is&quot;</span>, check_min_margin)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] &quot;The minimum functional margin is 1&quot;</code></pre>
@@ -2485,9 +2494,18 @@ vertical-align: -.125em;
 <p>The instructor’s GitHub account, <strong>rqzhu-aide</strong>, will open a <strong>GitHub Issue</strong> in the repository containing your Homework 7 submission. It will link to <strong>one</strong> assigned student’s repository.</p>
 <ol type="1">
 <li><p><strong>Use the skill.</strong> Find the complete skill definition in the assigned student’s Homework 7 report. Copy it without changes into a local <code>SKILL.md</code> file in your own folder. You do not need to install it. Give your agent the path to the file and explicitly ask it to follow that skill while analyzing the <code>SAheart</code> data, using the response and predictor coding from Homework 7. Provide the necessary data information, but no additional preferences about methods, figures, model selection, or report style. Let the skill direct the analysis.</p>
-<p>Monitor the time, your token use, and your weekly quota while the agent works. If the run is taking too long or using your allowance too quickly, you may send a <strong>steer message</strong> asking the agent to finish immediately, or stop the run and summarize what you observed. A steer message redirects an agent while it is working; learn how to send one in your AI tool before starting.</p></li>
-<li><p><strong>Write a peer review.</strong> Read the student’s submitted report and what the skill produced in your run. Give a brief overall assessment, followed by <strong>three major items the author could improve</strong>. You may comment on any aspect of the skill or report. For each item, explain what you observed, why it matters, and what you recommend changing. If you stopped the run early, explain where and why. Write the review yourself, without AI assistance.</p></li>
-<li><p><strong>Share your review.</strong> Open a GitHub Issue in the assigned student’s Homework 7 repository containing your review. Copy the same review into your Homework 8 submission report and include a link to the GitHub Issue.</p></li>
+<p>Monitor the time, your token use, and your weekly quota while the agent works. If the run is taking too long or using your allowance too quickly, you may send a <strong>steer message</strong> asking the agent to finish immediately, or stop the run and summarize what you observed. A steer message redirects an agent while it is working; learn how to send one in your AI tool before starting.</p>
+<p>When running ryanskim04’s skill to analyze the <code>SAheart</code> dataset, my AI agent took approximately 5 minutes to finish the analysis. Running this skill file costed 3.4 tokens, and I’m given 200 tokens per month. Assuming every month has 4 weeks, my weekly quota is 50 tokens. Therefore, running ryanskim04’s skill costed about 6.8% of my weekly quota. The AI agent was able to sucessfully run the LDA-QDA analysis for the <code>SAheart</code> dataset.</p></li>
+<li><p><strong>Write a peer review.</strong> Read the student’s submitted report and what the skill produced in your run. Give a brief overall assessment, followed by <strong>three major items the author could improve</strong>. You may comment on any aspect of the skill or report. For each item, explain what you observed, why it matters, and what you recommend changing. If you stopped the run early, explain where and why. Write the review yourself, without AI assistance.</p>
+<p>ryanskim04’s LDA-QDA analysis skill produced a report that fits in one page. The skill produced an outcome, a design and selection section, a table for training cross-validation, a graph to show the difference between the misclassification rate between LDA and QDA, a one-time held-out evaluation, and a table that displayed observed and predicted values. ryanskim04’s skill file followed the requirements outlined in Homework 7 Question 4. The skill can only be invoked if the user calls for it, and it can be applied to any dataset, not just the <code>SAheart</code> dataset. Overall, the report is concise and easy to follow.</p>
+<p>Three items the author could improve on:</p>
+<ol type="1">
+<li>The report can be given slightly more context for readers who are unaware of what the <code>SAheart</code> dataset means or why the author is running a LDA vs. QDA analysis. The author could provide a brief background in the beginning explaining what the report entails. In addition, it may be helpful to state what the predictors and response variables abbreviations stand for.</li>
+<li>A brief summary/conclusion of the analysis towards the end of the report may be helpful for readers. Rather than stating “The CV result favored LDA by about 3.8 percentage points”, it may be helpful to say something along the lines of “LDA had the better predictive performance than QDA because LDA’s misclassification rate is about 3.8 percentage points lower than QDA’s misclassification rate”. I can see that the title of the graph says “(lower is better)”, but explaining it in text may help readers.</li>
+<li>For the observed/predicted table, it may be helpful for readers to label the 0’s and 1’s as False Positive, True Positive, False Negative, and True Negative (or added in parentheses). Specify what positive means here. This gives context on which values are misclassified.</li>
+</ol></li>
+<li><p><strong>Share your review.</strong> Open a GitHub Issue in the assigned student’s Homework 7 repository containing your review. Copy the same review into your Homework 8 submission report and include a link to the GitHub Issue.</p>
+<p><a href="https://github.com/ryanskim04/stat432-fall2026/issues/5" class="uri">https://github.com/ryanskim04/stat432-fall2026/issues/5</a></p></li>
 </ol>
 </section>
 
