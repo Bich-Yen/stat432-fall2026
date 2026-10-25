@@ -11,6 +11,8 @@ format:
     toc-location: body
     toc-title: "On this page"
     toc-depth: 2
+    code-fold: true
+    code-summary: "Show the workflow"
 ---
 
 The kernel-tuning question moved here from Homework 08. A solution for Question 1 will be available after Monday, October 26, 2026. No solution can be provided for Question 2.
@@ -47,7 +49,7 @@ folds <- createFolds(y = y, k = 5, list = TRUE, returnTrain = FALSE)
 # Create training and testing data for each fold
 # lapply(x, function()): run the function() once for each element of x
 # lapply() returns a list of the same length as x
-"fold_data <- lapply(folds, function(test_index)){
+fold_data <- lapply(folds, function(test_index){
   
   # setdiff() removes the testing indices from X, which leaves the training indices
   train_index <- setdiff(seq_len(nrow(X)), test_index)
@@ -57,14 +59,19 @@ folds <- createFolds(y = y, k = 5, list = TRUE, returnTrain = FALSE)
   X_test <- X[test_index, , drop = FALSE]
   
   # Standardize predictors using only the training data in each fold
+  # apply(X, MARGIN = 2, FUN) means the function will be applied over the columns
   train_center <- colMeans(X_train)
-  train_scale <- apply(X_train, 2, sd)
+  train_sd <- apply(X_train, 2, sd)
   
-}"
+  # scale() standardizes data by calculating Z-scores
+  X_train_standard <- scale(X_train, center = train_center, scale = train_sd)
+  X_test_standard <- scale(X_test, center = train_center, scale = train_sd)
+  
+})
 
 # Fit a SVM with a linear kernel
 library(e1071)
-svm_fit_linear <- svm(X1_train, factor(y), type = "C", kernel = "linear",
+svm_fit_linear <- svm(X_train, factor(y), type = "C", kernel = "linear", 
                       cost = 10, scale = FALSE, tolerance = 1e-7)
 ```
 
