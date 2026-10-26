@@ -1,0 +1,232 @@
+---
+title: "SVM Analysis of South African Heart Disease"
+format:
+  html:
+    embed-resources: true
+    toc: false
+execute:
+  echo: false
+  warning: false
+  message: false
+  error: true
+  execute-dir: file
+---
+
+```{=html}
+<style>
+@page { size: letter; margin: 0.25in; }
+body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.02; }
+h1 { font-size: 15pt; margin: 0 0 3px; }
+h2 { font-size: 11pt; margin: 4px 0 2px; }
+p { margin: 2px 0; }
+table { font-size: 9pt; margin: 2px 0; }
+th, td { padding: 1px 4px !important; }
+figure { margin: 1px 0; }
+.fig-caption { font-size: 8pt; }
+@media print {
+  body { font-size: 11pt; }
+  .quarto-title-block { margin: 0 0 2px; }
+  h1, h2 { page-break-after: avoid; }
+  table, figure { page-break-inside: avoid; }
+}
+</style>
+```
+
+```{r}
+library(caret)
+library(e1071)
+library(ggplot2)
+library(knitr)
+
+set.seed(43201)
+heart <- read.csv("../homework/week-09/data/saheart.csv")
+heart$famhist <- factor(heart$famhist, levels = c("Absent", "Present"))
+y <- factor(heart$chd, levels = c(0, 1))
+X <- data.matrix(heart[, names(heart) != "chd"])
+
+stopifnot(!anyNA(X), !anyNA(y), all(is.finite(X)))
+```
+
+We predict binary coronary heart disease (`chd`, 0/1; 462 observations) from nine numeric predictors in `saheart.csv`; `famhist` is coded Absent = 1 and Present = 2. Linear and nonlinear SVMs compare whether a flexible boundary improves prediction.
+
+With seed 43201, a stratified 80/20 split reserved a test set. Stratified five-fold CV on training data selected among 20 candidates; the untouched test set estimates generalization after tuning. Scaling was learned within each fold. Candidates: linear (`C = 0.1, 1, 10, 100`); polynomial degrees 2–4 at those costs (`gamma = 1/9`, `coef0 = 0`); radial (`C = 1, 100`; `gamma = 1/9, 1/18`). Fits used `scale = FALSE`.
+
+```{r}
+training_index <- createDataPartition(y, p = 0.8, list = FALSE)
+X_training <- X[training_index, , drop = FALSE]
+y_training <- y[training_index]
+X_test <- X[-training_index, , drop = FALSE]
+y_test <- y[-training_index]
+folds <- createFolds(y_training, k = 5, list = TRUE, returnTrain = FALSE)
+
+costs <- c(0.1, 1, 10, 100)
+candidate_grid <- rbind(
+  data.frame(kernel = "linear", degree = NA_integer_, cost = costs,
+             gamma = NA_real_, coef0 = NA_real_),
+  do.call(rbind, lapply(2:4, function(d) {
+    data.frame(kernel = "polynomial", degree = d, cost = costs,
+               gamma = 1 / ncol(X), coef0 = 0)
+  })),
+  expand.grid(kernel = "radial", degree = NA_integer_, cost = c(1, 100),
+              gamma = c(1 / 9, 1 / 18), coef0 = NA_real_)
+)
+
+fit_candidate <- function(x, response, candidate) {
+  args <- list(
+    x = x, y = response, type = "C-classification",
+    kernel = candidate$kernel, cost = candidate$cost, scale = FALSE
+  )
+  if (candidate$kernel == "polynomial") {
+    args$degree <- candidate$degree
+    args$gamma <- candidate$gamma
+    args$coef0 <- candidate$coef0
+  } else if (candidate$kernel == "radial") {
+    args$gamma <- candidate$gamma
+  }
+  do.call(e1071::svm, args)
+}
+
+fold_error <- matrix(NA_real_, nrow(candidate_grid), length(folds))
+for (i in seq_len(nrow(candidate_grid))) {
+  candidate <- candidate_grid[i, ]
+  for (j in seq_along(folds)) {
+    validation_index <- folds[[j]]
+    fitting_index <- setdiff(seq_len(nrow(X_training)), validation_index)
+    x_fit <- X_training[fitting_index, , drop = FALSE]
+    center <- colMeans(x_fit)
+    spread <- apply(x_fit, 2, sd)
+    x_fit <- scale(x_fit, center = center, scale = spread)
+    x_validation <- scale(
+      X_training[validation_index, , drop = FALSE],
+      center = center, scale = spread
+    )
+    fit <- fit_candidate(x_fit, y_training[fitting_index], candidate)
+    predicted <- predict(fit, newdata = x_validation)
+    fold_error[i, j] <- mean(predicted != y_training[validation_index])
+  }
+}
+
+candidate_grid$mean_cv_error <- rowMeans(fold_error)
+candidate_grid$cv_sd <- apply(fold_error, 1, sd)
+best_index <- which.min(candidate_grid$mean_cv_error)
+selected <- candidate_grid[best_index, ]
+
+center <- colMeans(X_training)
+spread <- apply(X_training, 2, sd)
+X_training_standard <- scale(X_training, center = center, scale = spread)
+X_test_standard <- scale(X_test, center = center, scale = spread)
+final_fit <- fit_candidate(X_training_standard, y_training, selected)
+test_prediction <- predict(final_fit, newdata = X_test_standard)
+test_error <- mean(test_prediction != y_test)
+test_accuracy <- 1 - test_error
+test_confusion <- table(Predicted = test_prediction, Observed = y_test)
+true_negative <- unname(test_confusion["0", "0"])
+false_positive <- unname(test_confusion["1", "0"])
+false_negative <- unname(test_confusion["0", "1"])
+true_positive <- unname(test_confusion["1", "1"])
+test_sensitivity <- true_positive / (true_positive + false_negative)
+test_specificity <- true_negative / (true_negative + false_positive)
+
+candidate_label <- ifelse(
+  candidate_grid$kernel == "linear",
+  sprintf("Lin C=%g", candidate_grid$cost),
+  ifelse(
+    candidate_grid$kernel == "polynomial",
+    sprintf("Poly%d C=%g", candidate_grid$degree, candidate_grid$cost),
+    sprintf("RBF C=%g g=%.3g", candidate_grid$cost, candidate_grid$gamma)
+  )
+)
+candidate_grid$candidate <- candidate_label
+candidate_grid$selected <- seq_len(nrow(candidate_grid)) == best_index
+selected_label <- paste0(
+  selected$kernel,
+  if (selected$kernel == "polynomial") paste0(" degree ", selected$degree) else "",
+  " SVM"
+)
+selected_summary <- sprintf(
+  "%s (C = %g%s) had mean CV error %.3f (fold SD %.3f). On the untouched %d-observation test set, accuracy was %.1f%% (error %.1f%%), sensitivity %.1f%%, and specificity %.1f%%.",
+  selected_label,
+  selected$cost,
+  if (selected$kernel == "linear") "" else sprintf(", gamma = %.3g", selected$gamma),
+  selected$mean_cv_error,
+  selected$cv_sd,
+  length(y_test),
+  100 * test_accuracy,
+  100 * test_error,
+  100 * test_sensitivity,
+  100 * test_specificity
+)
+class_balance_note <- sprintf(
+  "The %.1f%% sensitivity versus %.1f%% specificity shows that low overall error did not translate to similarly strong detection of CHD-positive cases.",
+  100 * test_sensitivity,
+  100 * test_specificity
+)
+confusion_table <- data.frame(
+  Predicted = c("0 (negative)", "1 (positive)"),
+  `Observed 0` = c(
+    sprintf("%d (TN)", true_negative),
+    sprintf("%d (FP)", false_positive)
+  ),
+  `Observed 1` = c(
+    sprintf("%d (FN)", false_negative),
+    sprintf("%d (TP)", true_positive)
+  ),
+  check.names = FALSE
+)
+
+table_rows <- data.frame(
+  Candidate_1 = candidate_grid$candidate[1:10],
+  CV_error_1 = sprintf("%.3f", candidate_grid$mean_cv_error[1:10]),
+  Candidate_2 = candidate_grid$candidate[11:20],
+  CV_error_2 = sprintf("%.3f", candidate_grid$mean_cv_error[11:20])
+)
+selected_labels <- candidate_grid$candidate[candidate_grid$selected]
+table_rows$Candidate_1[table_rows$Candidate_1 == selected_labels] <-
+  paste0("* ", selected_labels)
+table_rows$Candidate_2[table_rows$Candidate_2 == selected_labels] <-
+  paste0("* ", selected_labels)
+```
+
+## Cross-validation results
+
+```{r}
+knitr::kable(
+  table_rows,
+  format = "html",
+  col.names = c("Candidate", "Mean CV error", "Candidate", "Mean CV error"),
+  align = c("l", "c", "l", "c"),
+  caption = "* marks the candidate selected by the lowest mean CV error."
+)
+```
+
+```{r, fig.width=8.2, fig.height=2, dpi=150, fig.cap="Mean five-fold CV error for each candidate; red marks the minimum and selected SVM."}
+ggplot(candidate_grid, aes(
+  x = reorder(candidate, mean_cv_error),
+  y = mean_cv_error,
+  color = selected
+)) +
+  geom_point(size = 2.3) +
+  coord_flip() +
+  scale_color_manual(values = c(`FALSE` = "#4C78A8", `TRUE` = "#D62728")) +
+  labs(x = NULL, y = "Mean five-fold CV misclassification rate") +
+  theme_minimal(base_size = 9) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size = 7.5),
+    panel.grid.major.y = element_blank()
+  )
+```
+
+**Selection and test result:** `r selected_summary` `r class_balance_note`
+
+```{r}
+knitr::kable(
+  confusion_table,
+  format = "html",
+  col.names = c("Predicted class", "Actual CHD = 0", "Actual CHD = 1"),
+  align = c("l", "c", "c"),
+  caption = "Held-out test-set confusion matrix; cells identify TN, FP, FN, and TP."
+)
+```
+
+The test estimate is based on one split and is therefore uncertain. This skill analysis uses CV only within the training partition before one test evaluation; the homework's Question 1 separately asks for five-fold CV over the full dataset.
