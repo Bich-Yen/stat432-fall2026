@@ -206,6 +206,14 @@ Complete the following tasks using RLT classification forests with 1,000 trees. 
 
 a.  Fit a random forest with the default `mtry` and node-size settings. Report the out-of-bag (OOB) misclassification rate.
 
+According to Week 10: Random Forests and Tuning, to calculate out-of-bag (OOB) misclassification rate: i. Fit the trees and keep track of which observations were left out of each sample.
+
+ii\. For each observation, average predictions from its OOB trees.
+
+iii\. Compare the OOB prediction with the observed response and average the losses.
+
+"For regression, the resulting average squared error is the OOB MSE" (Week 10: Random Forests and Tuning).
+
 ```{r}
 # Load the file
 df_mnist <- read.csv("data/mnist-first2000.csv.gz")
@@ -237,10 +245,17 @@ pixel_fit <- RLT(X_train, factor(y_train),
                  model = "classification", 
                  ntrees = 1000,
                  resample.prob = 1, 
-                 replacement = TRUE
+                 replacement = TRUE,
+                 track.obs = TRUE
 )
 
-# Report the out-of-bag (OOB) misclassification rate
+# Find which observations where left out of each sample
+tree_prob <- predict(pixel_fit, X_train)$AllPrediction
+oob_tree <- pixel_fit$ObsTrack == 0
+
+oob_prob <- matrix(NA_real_, nrow = nrow(X_train), ncol = ncol(tree_prob[[1]]))
+
+# For each observation, average predictions from its OOB trees
 ```
 
 b.  Construct a grid of `mtry` and node-size values to tune the model. Select the setting using OOB misclassification rate. Report the OOB error for each setting and the selected values. Calculate and present the selected forest's OOB permutation variable importance for the 20 principal components. Comment on your results.
