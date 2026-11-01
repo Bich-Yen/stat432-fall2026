@@ -1,0 +1,234 @@
+---
+title: "Homework 10"
+pagetitle: "Homework 10"
+body-classes: "lecture-page practice-page"
+format:
+  html:
+    embed-resources: true
+    html-math-method: mathml
+    page-layout: full
+    toc: true
+    toc-location: body
+    toc-title: "On this page"
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show the workflow"
+---
+
+Solutions for Questions 1 and 2 will be available after Monday, November 2, 2026. No solution will be provided for Question 3.
+
+Use the RLT package for Questions 1 and 2: `RLT` in R or `rlt` in Python. The node-size parameter is `nmin` in R and `min_samples_leaf` in Python; both stop splitting a node when it contains at most that many observations. The candidate-predictor parameter is `mtry` in both languages. Use ordinary random forests, with reinforcement turned off.
+
+## Question 1: Bias-variance trade-off simulation
+
+Two important tuning parameters of random forests are node size and `mtry`. We have performed some preliminary analysis in class. The goal of this question is to perform a larger simulation study for these two tuning parameters.
+
+Consider a regression model with five jointly normally distributed predictors. Each predictor has mean 0 and variance 1, and the correlation between any two different predictors is 0.3. The response is
+
+$$Y=X_1+X_3+X_5+\varepsilon,
+\qquad \varepsilon\sim N(0,1),$$
+
+where the noise is independent of the predictors. Thus the true regression function is $f(\mathbf{x})=x_1+x_3+x_5$.
+
+a.  Set up a simulation study with 100 repetitions. Generate 200 test predictor vectors once and keep them fixed. In each repetition, generate 200 new training observations and use the same training data for all tuning settings. Fit 500-tree forests, drawing 200 observations with replacement for each tree. Make the following two comparisons:
+
+    - Fix `mtry` at 3 and vary node size over $1,5,10,20,30$.
+    - Fix node size at 10 and vary `mtry` over $1,2,3,4,5$.
+
+    Leave all other fitting parameters at their defaults. Record the predictions at each test point across repetitions. For each setting, estimate the squared bias and variance at each test point, then average them over the 200 test points. Compare predictions with $f(\mathbf{x})$ when estimating bias. Produce two figures, one for each tuning parameter, showing the averaged squared bias and variance. Set a random seed and report it.
+
+$$Bias(Y) = E(\hat{Y}) - Y = \mu_Y - Y \qquad Variance(Y) = E(X^2) - E(X)^2$$
+
+```{r, message = FALSE}
+library(RLT)
+set.seed(43201)
+
+# Generate 200 test predictor vectors
+x1 <- rnorm(n = 200, mean = 0, sd = 1)
+x2 <- rnorm(n = 200, mean = 0, sd = 1)
+x3 <- rnorm(n = 200, mean = 0, sd = 1)
+x4 <- rnorm(n = 200, mean = 0, sd = 1)
+x5 <- rnorm(n = 200, mean = 0, sd = 1)
+
+e <- rnorm(n = 200, mean = 0, sd = 1)
+cor_matrix <- matrix(0.3, nrow = 5, ncol = 5)
+diag(cor_matrix) <- 1
+
+Z_test <- cbind(x1, x2, x3, x4, x5)
+X_test <- Z_test %*% chol(cor_matrix)
+f_test <- X_test[, 1] + X_test[, 3] + X_test[, 5]
+
+# Set up the node grids for mtry = 3
+node_grid <- c(1, 5, 10, 20, 30)
+
+# Set up parameters
+nsim <- 100
+
+# test point x repetition x node size; 200 x 100 x 5
+pred1 <- array(NA_real_, dim = c(200, nsim, length(node_grid)))
+
+# Run the simulation 100 times
+for (r in 1:nsim){
+  
+  # Generate the training data for each run
+  Z_train <- matrix(rnorm(200 * 5), nrow = 200, ncol = 5)
+  X_train <- Z_train %*% chol(cor_matrix)
+  
+  e_train <- rnorm(n = 200, mean = 0, sd = 1)
+  y_train <- X_train[, 1] + X_train[, 3] + X_train[, 5] + e_train
+  
+  # Run the simulation at each node size for mtry = 3
+  for (i in seq_along(node_grid)){
+    
+    # Fit 500-tree forest for each node size
+    fit <- RLT(X_train, y_train, 
+               model = "regression", 
+               ntrees = 500, 
+               mtry = 3, 
+               nmin = node_grid[i],
+               resample.prob = 1, 
+               replacement = TRUE
+               )
+    
+    # Record the predictions at each test point across repetitions
+    pred1[, r, i] <- predict(fit, X_test)$Prediction
+    
+  }
+}
+
+# Estimate the squared bias and variance at each test point
+mean_pred1 <- apply(pred1, c(1, 3), mean)
+squared_bias1 <- (mean_pred1 - f_test)^2
+variance1 <- apply(pred1, c(1, 3), var)
+
+# Average squared bias and variance over the 200 test points
+avg_squared_bias1 <- colMeans(squared_bias1)
+avg_variance1 <- colMeans(variance1)
+
+# Repeat simulation for node size = 10
+mtry_grid <- c(1, 2, 3, 4, 5)
+pred2 <- array(NA_real_, dim = c(200, nsim, length(mtry_grid)))
+
+# Run the simulation 100 times
+for (r in 1:nsim){
+  
+  # Generate the training data for each run
+  Z_train <- matrix(rnorm(200 * 5), nrow = 200, ncol = 5)
+  X_train <- Z_train %*% chol(cor_matrix)
+  
+  e_train <- rnorm(n = 200, mean = 0, sd = 1)
+  y_train <- X_train[, 1] + X_train[, 3] + X_train[, 5] + e_train
+  
+  # Run the simulation at each mtry for node size = 10
+  for (i in seq_along(mtry_grid)){
+    
+    # Fit 500-tree forest for each mtry
+    fit <- RLT(X_train, y_train, 
+               model = "regression", 
+               ntrees = 500, 
+               mtry = mtry_grid[i], 
+               nmin = 10,
+               resample.prob = 1, 
+               replacement = TRUE
+    )
+    
+    # Record the predictions at each test point across repetitions
+    pred2[, r, i] <- predict(fit, X_test)$Prediction
+    
+  }
+}
+
+# Estimate the squared bias and variance at each test point
+mean_pred2 <- apply(pred2, c(1, 3), mean)
+squared_bias2 <- (mean_pred2 - f_test)^2
+variance2 <- apply(pred2, c(1, 3), var)
+
+# Average squared bias and variance over the 200 test points
+avg_squared_bias2 <- colMeans(squared_bias2)
+avg_variance2 <- colMeans(variance2)
+
+# Plot figures for tuning parameters node size and mtry
+# node size
+plot(x = node_grid, y = avg_squared_bias1,
+     ylim = range(c(avg_squared_bias1, avg_variance1)),
+     main = "Bias and variance by node size (mtry = 3)", 
+     xlab = "Node Size", ylab = "Average",
+     type = "b", pch = 16, col = "deepskyblue"
+     )
+lines(x = node_grid, y = avg_variance1,
+      type = "b", pch = 17, col = "darkorange")
+legend(
+  "topleft",
+  legend = c("Average Squared Bias", "Average Variance"),
+  col = c("deepskyblue", "darkorange"),
+  pch = c(16, 17),
+  lty = 1
+)
+
+# mtry
+plot(x = mtry_grid, y = avg_squared_bias2,
+     ylim = range(c(avg_squared_bias2, avg_variance2)),
+     main = "Bias and variance by mtry (node size = 10)", 
+     xlab = "mtry", ylab = "Average",
+     type = "b", pch = 16, col = "deepskyblue"
+)
+lines(x = mtry_grid, y = avg_variance2,
+      type = "b", pch = 17, col = "darkorange")
+legend(
+  "topright",
+  legend = c("Average Squared Bias", "Average Variance"),
+  col = c("deepskyblue", "darkorange"),
+  pch = c(16, 17),
+  lty = 1
+)
+```
+
+b.  Discuss your results in terms of the bias-variance trade-off:
+
+    - How does a large node size, such as 30, affect the fit in this example?
+    - What are the benefits and drawbacks of using a large `mtry` value?
+    - If each tree instead sampled 100 observations with replacement, would you expect the preferred node size to shift toward smaller or larger values? Explain your reasoning. You may use an additional simulation to help, but a particular pattern is not guaranteed.
+
+At large node sizes, the average variance is close to 0 whereas the average squared bias has increased significantly. "A small terminal node uses few observations to form its prediction. This resembles the small-𝑘 choice in KNN: it allows a more local fit, but the prediction can be more variable. Large terminal nodes average over more observations and can miss local structure" (Week 10 Lecture: Random Forests and Tuning).
+
+Using a large mtry value increases the average variance but significantly decreases the average squared bias. "With a small mtry, a split may have only irrelevant predictors to choose from. Missing the useful predictors can increase bias. A larger mtry makes the search more greedy: more predictors compete, and the strongest available split wins. This can improve individual trees, but it can also make trees more alike" (Week 10 Lecture: Random Forests and Tuning).
+
+If each tree sampled 100 observations with replacement, I would expect the preferred node size to shift toward larger values. This is because less observations with replacement means each tree has less information to create its splits. Less information means smaller node sizes would make the predictions unstable. Therefore, having a larger node size would help make the predictions more stable and reduce variance, but bias will increase.
+
+## Question 2: Tuning random forests for MNIST
+
+Use `mnist-first2000.csv.gz` from the combined ZIP. It contains 2,000 MNIST observations, with the digit label `Digit` and 784 pixel values.
+
+- From the first 1,000 observations, keep digits 1, 6, and 7 as the training data. From the remaining 1,000 observations, keep the same digits as the test data.
+- Fit PCA to the training pixels, centering but not scaling them. Use the first 20 principal components as predictors, and project the test observations using the same training means and loadings.
+
+Complete the following tasks using RLT classification forests with 1,000 trees. For each tree, draw a bootstrap sample of the same size as the training set.
+
+a.  Fit a random forest with the default `mtry` and node-size settings. Report the out-of-bag (OOB) misclassification rate.
+
+b.  Construct a grid of `mtry` and node-size values to tune the model. Select the setting using OOB misclassification rate. Report the OOB error for each setting and the selected values. Calculate and present the selected forest's OOB permutation variable importance for the 20 principal components. Comment on your results.
+
+c.  Apply the selected model to the test data and report the misclassification rate and confusion matrix. Use the test labels only for this final assessment.
+
+## Question 3: Planning a random-forest analysis skill
+
+In earlier homework, some students wrote long skill files with detailed instructions, while others wrote short skills emphasizing their specific requirements or references. These approaches may perform differently depending on the AI and the task. A capable AI may already know standard ways to perform an analysis, so some instructions may be redundant, add little value, or sometimes make the analysis worse. It may be more useful to specify your personal choices for the analysis. An AI with more limited knowledge may benefit from detailed instructions that remind it of the steps to perform.
+
+a.  Write one paragraph describing how you would write a skill that directs an AI to perform a random-forest analysis and produce a report for a future dataset. Discuss how you would balance standard analysis instructions with your personal preferences, considering the AI's capabilities.
+
+    I would instruct the AI to not perform the skill unless explicitly told to do so. For the analysis, I would instruct the AI to check if the dataset is suitable for a random-forest analysis, tune the parameters using an appropriate method, and evaluate the model's performance on the selected tuned parameters. I would not overly explain the methods for tuning and validation, but I would give enough information so that the AI could perform the analysis for any dataset. In addition, I would instruct the AI to explain its procedure and state any limitations.
+
+b.  Provide **10 instructions** you would consider including in the skill, **ordered from the most basic instructions to the more personal preferences**. Your list may cover computation, tuning, tables, figures, interpretation, presentation, or other aspects of a random-forest report.
+
+    1.  Use this workflow only when the user explicitly invokes this skill and supplies the dataset, response, and predictors. Do not assume variable names, class count, coding, or results. Ask for missing inputs before analysis.
+    2.  Identify the response and predictors. Check for missing/non-numeric predictors. Determine if the data are suitable for a random-forest analysis.
+    3.  Set and report a random seed. Identify tuning parameters and use grid search.
+    4.  Use cross-validation to test the tuned parameters.
+    5.  Produce a figure with average squared bias and average variance for each tuning parameter.
+    6.  Produce a table with candidate settings, their average CV errors, and the selected model.
+    7.  A brief description of candidates and CV procedure, the selection, main findings, and limitations.
+    8.  Interpretation of the fit and key numerical results. Explain why.
+    9.  Add background information about the dataset and state any variables used.
+    10. Produce a one-page report with 11-point font.
+
+You only need to discuss how the skill should be written. You are not required to write a complete skill file or test it.
