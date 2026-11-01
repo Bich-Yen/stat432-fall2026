@@ -206,9 +206,54 @@ Complete the following tasks using RLT classification forests with 1,000 trees. 
 
 a.  Fit a random forest with the default `mtry` and node-size settings. Report the out-of-bag (OOB) misclassification rate.
 
+```{r}
+# Load the file
+df_mnist <- read.csv("data/mnist-first2000.csv.gz")
+
+# From the first 1,000 observations, keep digits 1, 6, and 7 as training data
+# %in% checks if number exists in the dataframe
+train_mnist <- subset(df_mnist[1:1000, ], Digit %in% c(1, 6, 7))
+pixel_train <- train_mnist[, -1]
+y_train <- train_mnist$Digit
+
+# From the second 1,000 observations, keep the same digits as test data
+test_mnist <- subset(df_mnist[1001:2000, ], Digit %in% c(1, 6, 7))
+pixel_test <- test_mnist[, -1]
+y_test <- test_mnist$Digit
+
+# Fit PCA to training pixels (center but don't scale)
+# prcomp() performs principal component analysis
+pixel_pca <- prcomp(pixel_train, center = TRUE, scale = FALSE)
+
+# Use the first 20 PCs as predictors
+X_train <- pixel_pca$x[, 1:20, drop = FALSE]
+
+# Project test observations using the same training means and loadings
+# Grab only the first 20 PCs
+X_test <- predict(pixel_pca, newdata = pixel_test)[, 1:20, drop = FALSE]
+
+# Fit a random forest with classification, 1000 trees, and default mtry and node-size settings
+pixel_fit <- RLT(X_train, factor(y_train), 
+                 model = "classification", 
+                 ntrees = 1000,
+                 resample.prob = 1, 
+                 replacement = TRUE
+)
+
+# Report the out-of-bag (OOB) misclassification rate
+```
+
 b.  Construct a grid of `mtry` and node-size values to tune the model. Select the setting using OOB misclassification rate. Report the OOB error for each setting and the selected values. Calculate and present the selected forest's OOB permutation variable importance for the 20 principal components. Comment on your results.
 
+```{r}
+fdsfsa
+```
+
 c.  Apply the selected model to the test data and report the misclassification rate and confusion matrix. Use the test labels only for this final assessment.
+
+```{r}
+fdsfas
+```
 
 ## Question 3: Planning a random-forest analysis skill
 
