@@ -2560,10 +2560,11 @@ vertical-align: -.125em;
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">cbind</span>(alltune, </span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>                 <span class="at">OOB_misclassification_rate =</span> <span class="fu">round</span>(allerror, <span class="at">digits =</span> <span class="dv">5</span>)</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>                 )</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  alltune, </span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">OOB_misclassification_rate =</span> <span class="fu">round</span>(allerror, <span class="at">digits =</span> <span class="dv">5</span>)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>   nmin mtry OOB_misclassification_rate
@@ -2587,63 +2588,49 @@ vertical-align: -.125em;
 <details class="code-fold">
 <summary>Show the workflow</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the selected forest&#39;s OOB permutation variable importance for the 20 PCs</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># We have two candidate settings because both have the same lowest OOB misclassification rate</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># mtry = 5, nmin = 5</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>vi_fit1 <span class="ot">&lt;-</span> <span class="fu">RLT</span>(X_train, <span class="fu">factor</span>(y_train),</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">model =</span> <span class="st">&quot;classification&quot;</span>, </span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">ntrees =</span> <span class="dv">1000</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">nmin =</span> <span class="dv">5</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">mtry =</span> <span class="dv">5</span>,</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">resample.prob =</span> <span class="dv">1</span>, </span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">replacement =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">importance =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">track.obs =</span> <span class="cn">TRUE</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co"># mtry = 5, nmin = 10</span></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>vi_fit2 <span class="ot">&lt;-</span> <span class="fu">RLT</span>(X_train, <span class="fu">factor</span>(y_train),</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>               <span class="at">model =</span> <span class="st">&quot;classification&quot;</span>, </span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>               <span class="at">ntrees =</span> <span class="dv">1000</span>,</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>               <span class="at">nmin =</span> <span class="dv">10</span>,</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>               <span class="at">mtry =</span> <span class="dv">5</span>,</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>               <span class="at">resample.prob =</span> <span class="dv">1</span>, </span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>               <span class="at">replacement =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>               <span class="at">importance =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>               <span class="at">track.obs =</span> <span class="cn">TRUE</span></span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>vi_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">PC =</span> <span class="fu">colnames</span>(X_train),</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">vi_nmin5 =</span> <span class="fu">round</span>(<span class="fu">as.numeric</span>(vi_fit1<span class="sc">$</span>VarImp), <span class="at">digits =</span> <span class="dv">4</span>),</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">vi_nmin10 =</span> <span class="fu">round</span>(<span class="fu">as.numeric</span>(vi_fit2<span class="sc">$</span>VarImp), <span class="at">digits =</span> <span class="dv">4</span>)</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>vi_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># mtry = 5, nmin = 5</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>vi_fit <span class="ot">&lt;-</span> <span class="fu">RLT</span>(X_train, <span class="fu">factor</span>(y_train),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">model =</span> <span class="st">&quot;classification&quot;</span>, </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">ntrees =</span> <span class="dv">1000</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">nmin =</span> <span class="dv">5</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">mtry =</span> <span class="dv">5</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>              <span class="at">resample.prob =</span> <span class="dv">1</span>, </span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>              <span class="at">replacement =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">importance =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">track.obs =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>vi_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">PC =</span> <span class="fu">colnames</span>(X_train),</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">vi =</span> <span class="fu">round</span>(<span class="fu">as.numeric</span>(vi_fit<span class="sc">$</span>VarImp), <span class="at">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>vi_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>     PC vi_nmin5 vi_nmin10
-1   PC1   0.8376    0.8177
-2   PC2   1.3393    1.2719
-3   PC3   0.1607    0.1556
-4   PC4   0.0723    0.0712
-5   PC5   0.1515    0.1574
-6   PC6   0.1377    0.1298
-7   PC7   0.0768    0.0724
-8   PC8   0.0459    0.0383
-9   PC9   0.0364    0.0247
-10 PC10   0.0545    0.0487
-11 PC11   0.0809    0.0790
-12 PC12   0.0544    0.0460
-13 PC13   0.0374    0.0346
-14 PC14   0.0407    0.0476
-15 PC15   0.0242    0.0220
-16 PC16   0.0479    0.0416
-17 PC17   0.0362    0.0239
-18 PC18   0.0626    0.0707
-19 PC19   0.0275    0.0250
-20 PC20   0.0372    0.0303</code></pre>
+<pre><code>     PC     vi
+1   PC1 0.8376
+2   PC2 1.3393
+3   PC3 0.1607
+4   PC4 0.0723
+5   PC5 0.1515
+6   PC6 0.1377
+7   PC7 0.0768
+8   PC8 0.0459
+9   PC9 0.0364
+10 PC10 0.0545
+11 PC11 0.0809
+12 PC12 0.0544
+13 PC13 0.0374
+14 PC14 0.0407
+15 PC15 0.0242
+16 PC16 0.0479
+17 PC17 0.0362
+18 PC18 0.0626
+19 PC19 0.0275
+20 PC20 0.0372</code></pre>
 </div>
 </div>
-<p>In general, smaller mtry values have lower OOB misclassification rates. <code>mtry</code> = 5, 5 and <code>nmin</code> = 5, 10 have the lowest OOB misclassification rates of any candidate settings. The error rates tend to increase at higher node sizes.</p>
+<p>In general, smaller mtry values have lower OOB misclassification rates. <code>mtry</code> = 5 and <code>nmin</code> = 5 has the lowest OOB misclassification rates of any candidate settings. The error rates tend to increase at higher node sizes.</p>
 <p>PC1 and PC2 have the largest importance values for both candidate settings. This suggests that the fitted forests rely more on the first two principal components than the rest of the 18 components for classification. The similar ranking across the two candidate settings demonstrate that the dominance of PC1 and PC2 is independent of the values of mtry and nmin (node size). “Permutation importance describes predictive reliance in this fitted model. It does not establish a causal effect, and correlated predictors can share importance” (Week 10: Random Forests and Tuning).</p>
 <ol start="3" type="a">
 <li>Apply the selected model to the test data and report the misclassification rate and confusion matrix. Use the test labels only for this final assessment.</li>
@@ -2652,7 +2639,7 @@ vertical-align: -.125em;
 <details class="code-fold">
 <summary>Show the workflow</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mtry = 5, nmin = 5</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">RLT</span>(X_train, <span class="fu">factor</span>(y_train),</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>test_fit <span class="ot">&lt;-</span> <span class="fu">RLT</span>(X_train, <span class="fu">factor</span>(y_train),</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>           <span class="at">model =</span> <span class="st">&quot;classification&quot;</span>, </span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">ntrees =</span> <span class="dv">1000</span>,</span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">nmin =</span> <span class="dv">5</span>,</span>
@@ -2662,79 +2649,47 @@ vertical-align: -.125em;
 <span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">track.obs =</span> <span class="cn">TRUE</span></span>
 <span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># mtry = 5, nmin = 10</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">RLT</span>(X_train, <span class="fu">factor</span>(y_train),</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">model =</span> <span class="st">&quot;classification&quot;</span>, </span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>            <span class="at">ntrees =</span> <span class="dv">1000</span>,</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">nmin =</span> <span class="dv">10</span>,</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>            <span class="at">mtry =</span> <span class="dv">5</span>,</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>            <span class="at">resample.prob =</span> <span class="dv">1</span>, </span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>            <span class="at">replacement =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>            <span class="at">track.obs =</span> <span class="cn">TRUE</span></span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>class_levels <span class="ot">&lt;-</span> <span class="fu">levels</span>(<span class="fu">factor</span>(y_train)) <span class="co"># Digits 1, 6, 7</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>class_levels <span class="ot">&lt;-</span> <span class="fu">levels</span>(<span class="fu">factor</span>(y_train)) <span class="co"># Digits 1, 6, 7</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict the test observations</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>test_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(test_fit, X_test)<span class="sc">$</span>Prediction</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Transform RLT predictions 0, 1, 2 to 1, 6, 7</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>test_pred_labels <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  class_levels[<span class="fu">as.integer</span>(test_pred) <span class="sc">+</span> <span class="dv">1</span>L],</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> class_levels)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert actual test labels to a factor with the same levels</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>y_test_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(y_test, <span class="at">levels =</span> class_levels)</span>
 <span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict the test observations</span></span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>pred1 <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit1, X_test)<span class="sc">$</span>Prediction</span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>pred2 <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit2, X_test)<span class="sc">$</span>Prediction</span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Transform RLT predictions 0, 1, 2 to 1, 6, 7</span></span>
-<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>pred1_labels <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
-<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>  class_levels[<span class="fu">as.integer</span>(pred1) <span class="sc">+</span> <span class="dv">1</span>L],</span>
-<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> class_levels)</span>
-<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>pred2_labels <span class="ot">&lt;-</span> <span class="fu">factor</span>(</span>
-<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>  class_levels[<span class="fu">as.integer</span>(pred2) <span class="sc">+</span> <span class="dv">1</span>L],</span>
-<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">levels =</span> class_levels)</span>
-<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert actual test labels to a factor with the same levels</span></span>
-<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>y_test_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(y_test, <span class="at">levels =</span> class_levels)</span>
-<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the misclassification rates for the test data</span></span>
-<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>test_rate1 <span class="ot">&lt;-</span> <span class="fu">mean</span>(pred1_labels <span class="sc">!=</span> y_test_factor)</span>
-<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a>test_rate2 <span class="ot">&lt;-</span> <span class="fu">mean</span>(pred2_labels <span class="sc">!=</span> y_test_factor)</span>
-<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Report misclassification rates and confusion matrices</span></span>
-<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a>cm1 <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Actual =</span> y_test_factor,</span>
-<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a>             <span class="at">Predicted =</span> pred1_labels)</span>
-<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a>cm2 <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Actual =</span> y_test_factor,</span>
-<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a>             <span class="at">Predicted =</span> pred2_labels)</span>
-<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a>test_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb9-52"><a href="#cb9-52" aria-hidden="true" tabindex="-1"></a>  <span class="at">mtry =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">5</span>), </span>
-<span id="cb9-53"><a href="#cb9-53" aria-hidden="true" tabindex="-1"></a>  <span class="at">nmin =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">10</span>),</span>
-<span id="cb9-54"><a href="#cb9-54" aria-hidden="true" tabindex="-1"></a>  <span class="at">test_misclassification_rate =</span> <span class="fu">c</span>(test_rate1, test_rate2)</span>
-<span id="cb9-55"><a href="#cb9-55" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb9-56"><a href="#cb9-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-57"><a href="#cb9-57" aria-hidden="true" tabindex="-1"></a>test_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the misclassification rates for the test data</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>test_rate <span class="ot">&lt;-</span> <span class="fu">mean</span>(test_pred_labels <span class="sc">!=</span> y_test_factor)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Report misclassification rates and confusion matrices</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>cm <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Actual =</span> y_test_factor, <span class="at">Predicted =</span> test_pred_labels)</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>test_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">mtry =</span> <span class="dv">5</span>, </span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">nmin =</span> <span class="dv">5</span>,</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">test_misclassification_rate =</span> test_rate</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>test_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>  mtry nmin test_misclassification_rate
-1    5    5                   0.0126183
-2    5   10                   0.0126183</code></pre>
+1    5    5                  0.01577287</code></pre>
 </div>
 <details class="code-fold">
 <summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>cm1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>cm</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>      Predicted
 Actual   1   6   7
-     1 103   0   1
+     1 102   0   2
      6   1 105   0
-     7   0   2 105</code></pre>
-</div>
-<details class="code-fold">
-<summary>Show the workflow</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>cm2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code>      Predicted
-Actual   1   6   7
-     1 103   0   1
-     6   1 105   0
-     7   0   2 105</code></pre>
+     7   1   1 105</code></pre>
 </div>
 </div>
 </section>

@@ -324,15 +324,15 @@ for (k in 1:nrow(alltune)){
   
 }
 
-results <- cbind(alltune, 
-                 OOB_misclassification_rate = round(allerror, digits = 5)
-                 )
+results <- cbind(
+  alltune, 
+  OOB_misclassification_rate = round(allerror, digits = 5)
+  )
 results
 
 # Calculate the selected forest's OOB permutation variable importance for the 20 PCs
-# We have two candidate settings because both have the same lowest OOB misclassification rate
 # mtry = 5, nmin = 5
-vi_fit1 <- RLT(X_train, factor(y_train),
+vi_fit <- RLT(X_train, factor(y_train),
               model = "classification", 
               ntrees = 1000,
               nmin = 5,
@@ -343,27 +343,14 @@ vi_fit1 <- RLT(X_train, factor(y_train),
               track.obs = TRUE
 )
 
-# mtry = 5, nmin = 10
-vi_fit2 <- RLT(X_train, factor(y_train),
-               model = "classification", 
-               ntrees = 1000,
-               nmin = 10,
-               mtry = 5,
-               resample.prob = 1, 
-               replacement = TRUE,
-               importance = TRUE,
-               track.obs = TRUE
-)
-
 vi_results <- data.frame(
   PC = colnames(X_train),
-  vi_nmin5 = round(as.numeric(vi_fit1$VarImp), digits = 4),
-  vi_nmin10 = round(as.numeric(vi_fit2$VarImp), digits = 4)
+  vi = round(as.numeric(vi_fit$VarImp), digits = 4)
 )
 vi_results
 ```
 
-In general, smaller mtry values have lower OOB misclassification rates. `mtry` = 5, 5 and `nmin` = 5, 10 have the lowest OOB misclassification rates of any candidate settings. The error rates tend to increase at higher node sizes.
+In general, smaller mtry values have lower OOB misclassification rates. `mtry` = 5 and `nmin` = 5 has the lowest OOB misclassification rates of any candidate settings. The error rates tend to increase at higher node sizes.
 
 PC1 and PC2 have the largest importance values for both candidate settings. This suggests that the fitted forests rely more on the first two principal components than the rest of the 18 components for classification. The similar ranking across the two candidate settings demonstrate that the dominance of PC1 and PC2 is independent of the values of mtry and nmin (node size). "Permutation importance describes predictive reliance in this fitted model. It does not establish a causal effect, and correlated predictors can share importance" (Week 10: Random Forests and Tuning).
 
@@ -371,7 +358,7 @@ c.  Apply the selected model to the test data and report the misclassification r
 
 ```{r}
 # mtry = 5, nmin = 5
-fit1 <- RLT(X_train, factor(y_train),
+test_fit <- RLT(X_train, factor(y_train),
            model = "classification", 
            ntrees = 1000,
            nmin = 5,
@@ -381,54 +368,33 @@ fit1 <- RLT(X_train, factor(y_train),
            track.obs = TRUE
 )
 
-# mtry = 5, nmin = 10
-fit2 <- RLT(X_train, factor(y_train),
-            model = "classification", 
-            ntrees = 1000,
-            nmin = 10,
-            mtry = 5,
-            resample.prob = 1, 
-            replacement = TRUE,
-            track.obs = TRUE
-)
-
 class_levels <- levels(factor(y_train)) # Digits 1, 6, 7
 
 # Predict the test observations
-pred1 <- predict(fit1, X_test)$Prediction
-pred2 <- predict(fit2, X_test)$Prediction
+test_pred <- predict(test_fit, X_test)$Prediction
 
 # Transform RLT predictions 0, 1, 2 to 1, 6, 7
-pred1_labels <- factor(
-  class_levels[as.integer(pred1) + 1L],
-  levels = class_levels)
-
-pred2_labels <- factor(
-  class_levels[as.integer(pred2) + 1L],
+test_pred_labels <- factor(
+  class_levels[as.integer(test_pred) + 1L],
   levels = class_levels)
 
 # Convert actual test labels to a factor with the same levels
 y_test_factor <- factor(y_test, levels = class_levels)
 
 # Calculate the misclassification rates for the test data
-test_rate1 <- mean(pred1_labels != y_test_factor)
-test_rate2 <- mean(pred2_labels != y_test_factor)
+test_rate <- mean(test_pred_labels != y_test_factor)
 
 # Report misclassification rates and confusion matrices
-cm1 <- table(Actual = y_test_factor,
-             Predicted = pred1_labels)
-cm2 <- table(Actual = y_test_factor,
-             Predicted = pred2_labels)
+cm <- table(Actual = y_test_factor, Predicted = test_pred_labels)
 
 test_results <- data.frame(
-  mtry = c(5, 5), 
-  nmin = c(5, 10),
-  test_misclassification_rate = c(test_rate1, test_rate2)
+  mtry = 5, 
+  nmin = 5,
+  test_misclassification_rate = test_rate
   )
 
 test_results
-cm1
-cm2
+cm
 ```
 
 ## Question 3: Planning a random-forest analysis skill
