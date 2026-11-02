@@ -206,7 +206,9 @@ Complete the following tasks using RLT classification forests with 1,000 trees. 
 
 a.  Fit a random forest with the default `mtry` and node-size settings. Report the out-of-bag (OOB) misclassification rate.
 
-According to Week 10: Random Forests and Tuning, to calculate out-of-bag (OOB) misclassification rate: i. Fit the trees and keep track of which observations were left out of each sample.
+According to Week 10: Random Forests and Tuning, to calculate out-of-bag (OOB) misclassification rate:
+
+i\. Fit the trees and keep track of which observations were left out of each sample.
 
 ii\. For each observation, average predictions from its OOB trees.
 
@@ -249,25 +251,184 @@ pixel_fit <- RLT(X_train, factor(y_train),
                  track.obs = TRUE
 )
 
-# Find which observations where left out of each sample
-tree_prob <- predict(pixel_fit, X_train)$AllPrediction
-oob_tree <- pixel_fit$ObsTrack == 0
+# Create a function to calculate OOB misclassification rate
+oob_error <- function(fit, X, y){
+  
+  # Get per-tree predictions and identify OOB trees
+  tree_prob <- predict(fit, X)$AllPrediction
+  oob_tree <- fit$ObsTrack == 0
+  
+  # Create an emptry matrix to store averaged probabilities
+  class_levels <- levels(factor(y)) # Digits 1, 6, 7
+  oob_prob <- matrix(NA_real_, 
+                     nrow = nrow(X), 
+                     ncol = length(class_levels),
+                     dimnames = list(NULL, class_levels)
+  ) # One row per observation and one column per class
+  
+  # For each observation, average predictions from its OOB trees
+  for (i in seq_len(nrow(X))){
+    
+    # Find the trees that were left out
+    oob_trees <- which(oob_tree[i, ])
+    
+    if(length(oob_trees) == 0L){
+      stop("An observation has no OOB trees.")
+    }
+    
+    # Average the class probabilities from the selected trees
+    oob_prob[i, ] <- colMeans(do.call(
+      rbind,
+      lapply(oob_trees, function(b) tree_prob[[b]][i, ])
+    ))
+  }
+  
+  # Choose the class with the highest average probability
+  oob_pred <- factor(
+    class_levels[max.col(oob_prob, ties.method = "first")],
+    levels = class_levels
+  )
+  
+  # Calculate the fraction of OOB predictions that were wrong
+  mean(oob_pred != factor(y, levels = class_levels))
+  
+}
 
-oob_prob <- matrix(NA_real_, nrow = nrow(X_train), ncol = ncol(tree_prob[[1]]))
-
-# For each observation, average predictions from its OOB trees
+oob_rate <- oob_error(pixel_fit, X_train, y_train)
+paste("The out-of-bag (OOB) misclassification rate is", 
+      round(oob_rate, digits = 5))
 ```
 
 b.  Construct a grid of `mtry` and node-size values to tune the model. Select the setting using OOB misclassification rate. Report the OOB error for each setting and the selected values. Calculate and present the selected forest's OOB permutation variable importance for the 20 principal components. Comment on your results.
 
 ```{r}
-fdsfsa
+# Construct a grid of mtry and node-size (aka nmin) values
+alltune <- expand.grid(nmin = seq(from = 5, to = 20, by = 5), 
+                       mtry = seq(from = 5, to = 20, by = 5)
+                       )
+allerror <- numeric(nrow(alltune))
+
+for (k in 1:nrow(alltune)){
+  fit <- RLT(X_train, factor(y_train),
+             model = "classification", 
+             ntrees = 1000,
+             nmin = alltune$nmin[k],
+             mtry = alltune$mtry[k],
+             resample.prob = 1, 
+             replacement = TRUE,
+             track.obs = TRUE
+             )
+  
+  # Calculate OOB misclassification rate for each setting
+  allerror[k] <- oob_error(fit, X_train, y_train)
+  
+}
+
+results <- cbind(alltune, 
+                 OOB_misclassification_rate = round(allerror, digits = 5)
+                 )
+results
+
+# Calculate the selected forest's OOB permutation variable importance for the 20 PCs
+# We have two candidate settings because both have the same lowest OOB misclassification rate
+# mtry = 5, nmin = 5
+vi_fit1 <- RLT(X_train, factor(y_train),
+              model = "classification", 
+              ntrees = 1000,
+              nmin = 5,
+              mtry = 5,
+              resample.prob = 1, 
+              replacement = TRUE,
+              importance = TRUE,
+              track.obs = TRUE
+)
+
+# mtry = 5, nmin = 10
+vi_fit2 <- RLT(X_train, factor(y_train),
+               model = "classification", 
+               ntrees = 1000,
+               nmin = 10,
+               mtry = 5,
+               resample.prob = 1, 
+               replacement = TRUE,
+               importance = TRUE,
+               track.obs = TRUE
+)
+
+vi_results <- data.frame(
+  PC = colnames(X_train),
+  vi_nmin5 = round(as.numeric(vi_fit1$VarImp), digits = 4),
+  vi_nmin10 = round(as.numeric(vi_fit2$VarImp), digits = 4)
+)
+vi_results
 ```
+
+In general, smaller mtry values have lower OOB misclassification rates. `mtry` = 5, 5 and `nmin` = 5, 10 have the lowest OOB misclassification rates of any candidate settings. The error rates tend to increase at higher node sizes.
+
+PC1 and PC2 have the largest importance values for both candidate settings. This suggests that the fitted forests rely more on the first two principal components than the rest of the 18 components for classification. The similar ranking across the two candidate settings demonstrate that the dominance of PC1 and PC2 is independent of the values of mtry and nmin (node size). "Permutation importance describes predictive reliance in this fitted model. It does not establish a causal effect, and correlated predictors can share importance" (Week 10: Random Forests and Tuning).
 
 c.  Apply the selected model to the test data and report the misclassification rate and confusion matrix. Use the test labels only for this final assessment.
 
 ```{r}
-fdsfas
+# mtry = 5, nmin = 5
+fit1 <- RLT(X_train, factor(y_train),
+           model = "classification", 
+           ntrees = 1000,
+           nmin = 5,
+           mtry = 5,
+           resample.prob = 1, 
+           replacement = TRUE,
+           track.obs = TRUE
+)
+
+# mtry = 5, nmin = 10
+fit2 <- RLT(X_train, factor(y_train),
+            model = "classification", 
+            ntrees = 1000,
+            nmin = 10,
+            mtry = 5,
+            resample.prob = 1, 
+            replacement = TRUE,
+            track.obs = TRUE
+)
+
+class_levels <- levels(factor(y_train)) # Digits 1, 6, 7
+
+# Predict the test observations
+pred1 <- predict(fit1, X_test)$Prediction
+pred2 <- predict(fit2, X_test)$Prediction
+
+# Transform RLT predictions 0, 1, 2 to 1, 6, 7
+pred1_labels <- factor(
+  class_levels[as.integer(pred1) + 1L],
+  levels = class_levels)
+
+pred2_labels <- factor(
+  class_levels[as.integer(pred2) + 1L],
+  levels = class_levels)
+
+# Convert actual test labels to a factor with the same levels
+y_test_factor <- factor(y_test, levels = class_levels)
+
+# Calculate the misclassification rates for the test data
+test_rate1 <- mean(pred1_labels != y_test_factor)
+test_rate2 <- mean(pred2_labels != y_test_factor)
+
+# Report misclassification rates and confusion matrices
+cm1 <- table(Actual = y_test_factor,
+             Predicted = pred1_labels)
+cm2 <- table(Actual = y_test_factor,
+             Predicted = pred2_labels)
+
+test_results <- data.frame(
+  mtry = c(5, 5), 
+  nmin = c(5, 10),
+  test_misclassification_rate = c(test_rate1, test_rate2)
+  )
+
+test_results
+cm1
+cm2
 ```
 
 ## Question 3: Planning a random-forest analysis skill
