@@ -2631,7 +2631,7 @@ vertical-align: -.125em;
 </div>
 </div>
 <p>In general, smaller mtry values have lower OOB misclassification rates. <code>mtry</code> = 5 and <code>nmin</code> = 5 has the lowest OOB misclassification rates of any candidate settings. The error rates tend to increase at higher node sizes.</p>
-<p>PC1 and PC2 have the largest importance values for the candidate setting. This suggests that the fitted forests rely more on the first two principal components than the rest of the 18 components for classification. The similar ranking across the two candidate settings demonstrate that the dominance of PC1 and PC2 is independent of the values of mtry and nmin (node size). “Permutation importance describes predictive reliance in this fitted model. It does not establish a causal effect, and correlated predictors can share importance” (Week 10: Random Forests and Tuning).</p>
+<p>PC1 and PC2 have the largest importance values for the candidate setting. This suggests that the fitted forests rely more on the first two principal components than the rest of the 18 components for classification. “Permutation importance describes predictive reliance in this fitted model. It does not establish a causal effect, and correlated predictors can share importance” (Week 10: Random Forests and Tuning).</p>
 <ol start="3" type="a">
 <li>Apply the selected model to the test data and report the misclassification rate and confusion matrix. Use the test labels only for this final assessment.</li>
 </ol>
