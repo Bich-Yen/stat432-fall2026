@@ -1,0 +1,170 @@
+---
+title: "Homework 09 Solutions"
+pagetitle: "Homework 09 Solutions"
+body-classes: "lecture-page practice-page"
+format:
+  html:
+    html-math-method: mathml
+    page-layout: full
+    toc: true
+    toc-location: body
+    toc-title: "On this page"
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show the solution code"
+---
+
+## Question 1: Choosing an SVM kernel
+
+### Original question
+
+Use `saheart.csv` from the combined ZIP. As in Homework 7, predict `chd` using the same nine predictors, coding `famhist` as 1 for `Absent` and 2 for `Present`.
+
+Compare SVMs with a linear kernel, polynomial kernels of degrees 2 (quadratic), 3, and 4, and a radial basis kernel. Choose **no more than 20 candidate settings in total** across these kernels. Vary the cost $C$ for each kernel and the radial scale $\gamma$ for the radial kernel. State any other kernel settings you hold fixed.
+
+Divide the observations into five folds yourself and use the same folds for all candidates. Standardize predictors using only the fitting observations in each fold. Report the candidate settings and their mean cross-validation misclassification rates. Which kernel and settings do you prefer? Give a brief justification.
+
+### Solution
+
+Here is one grid of **18** candidate settings. We use $C\in\{0.1,1,10\}$ for each kernel, degrees 2, 3, and 4 for the polynomial kernel, and $\gamma\in\{0.01,0.1\}$ for the radial kernel. For the polynomial kernel, we hold $\gamma=1/9$ and $\operatorname{coef}_0=1$ fixed. For this example, we form five folds by cycling through the observations within each class. All nine predictors are standardized separately within the fitting portion of each fold. The error below is the average of the five validation misclassification rates, rounded to four decimal places. Different fold assignments may give different results.
+
+| Kernel | Degree | $C$ | Radial $\gamma$ | CV error |
+|---|---:|---:|---:|---:|
+| Linear |  | 0.1 |  | **0.2618** |
+| Linear |  | 1 |  | 0.2726 |
+| Linear |  | 10 |  | 0.2726 |
+| Polynomial | 2 | 0.1 |  | 0.2726 |
+| Polynomial | 2 | 1 |  | 0.2661 |
+| Polynomial | 2 | 10 |  | 0.3028 |
+| Polynomial | 3 | 0.1 |  | 0.2705 |
+| Polynomial | 3 | 1 |  | 0.2942 |
+| Polynomial | 3 | 10 |  | 0.3288 |
+| Polynomial | 4 | 0.1 |  | 0.2812 |
+| Polynomial | 4 | 1 |  | 0.3094 |
+| Polynomial | 4 | 10 |  | 0.3873 |
+| Radial |  | 0.1 | 0.01 | 0.3463 |
+| Radial |  | 1 | 0.01 | 0.2770 |
+| Radial |  | 10 | 0.01 | 0.2683 |
+| Radial |  | 0.1 | 0.1 | 0.3442 |
+| Radial |  | 1 | 0.1 | 0.2899 |
+| Radial |  | 10 | 0.1 | 0.3072 |
+
+Among these settings, the linear kernel with $C=0.1$ has the lowest mean CV error, **0.2618**. The best polynomial and radial settings have errors of 0.2661 and 0.2683. I would select the linear kernel for this grid, though its advantage is small. These CV errors guide model selection; they are not independent test errors.
+
+::: {.callout-note collapse="true" title="R and Python cross-validation code"}
+::: {.panel-tabset .sync-code-panels group="homework-09-language"}
+#### R
+
+```r
+library(e1071)
+
+data_dir <- if (file.exists("data/saheart.csv")) {
+  "data"
+} else {
+  "practice/weeks/week-09/data"
+}
+heart <- read.csv(file.path(data_dir, "saheart.csv"))
+heart$famhist <- as.numeric(factor(heart$famhist,
+                                   levels = c("Absent", "Present")))
+X <- data.matrix(heart[, names(heart) != "chd"])
+y <- heart$chd
+fold <- integer(length(y))
+for (cls in sort(unique(y))) {
+  obs <- which(y == cls)
+  fold[obs] <- rep(1:5, length.out = length(obs))
+}
+
+grid <- rbind(
+  data.frame(kernel = "Linear", degree = NA_integer_,
+             C = c(0.1, 1, 10), gamma = NA_real_),
+  expand.grid(kernel = "Polynomial", C = c(0.1, 1, 10),
+              degree = 2:4, gamma = NA_real_)[, c("kernel", "degree", "C", "gamma")],
+  expand.grid(kernel = "Radial", degree = NA_integer_,
+              C = c(0.1, 1, 10), gamma = c(0.01, 0.1))
+)
+error <- matrix(NA_real_, nrow = 5, ncol = nrow(grid))
+
+for (k in 1:5) {
+  fitting <- fold != k
+  center <- colMeans(X[fitting, , drop = FALSE])
+  scale <- apply(X[fitting, , drop = FALSE], 2, sd)
+  x_fit <- sweep(sweep(X[fitting, , drop = FALSE], 2, center), 2, scale, "/")
+  x_valid <- sweep(sweep(X[!fitting, , drop = FALSE], 2, center), 2, scale, "/")
+
+  for (j in seq_len(nrow(grid))) {
+    kernel <- tolower(grid$kernel[j])
+    args <- list(x = x_fit, y = factor(y[fitting]), kernel = kernel,
+                 cost = grid$C[j], scale = FALSE, tolerance = 1e-7)
+    if (kernel == "polynomial") {
+      args$degree <- grid$degree[j]
+      args$gamma <- 1 / ncol(X)
+      args$coef0 <- 1
+    }
+    if (kernel == "radial") args$gamma <- grid$gamma[j]
+    fit <- do.call(svm, args)
+    predicted <- as.integer(as.character(predict(fit, x_valid)))
+    error[k, j] <- mean(predicted != y[!fitting])
+  }
+}
+
+grid$cv_error <- colMeans(error)
+print(grid, row.names = FALSE)
+print(grid[which.min(grid$cv_error), ], row.names = FALSE)
+```
+
+#### Python
+
+```python
+from pathlib import Path
+import numpy as np
+import pandas as pd
+from sklearn.svm import SVC
+
+data_dir = Path("data")
+if not (data_dir / "saheart.csv").exists():
+    data_dir = Path("practice/weeks/week-09/data")
+heart = pd.read_csv(data_dir / "saheart.csv")
+heart["famhist"] = heart["famhist"].map({"Absent": 1, "Present": 2})
+X = heart.drop(columns="chd").to_numpy()
+y = heart["chd"].to_numpy()
+fold = np.empty(len(y), dtype=int)
+for cls in np.unique(y):
+    obs = np.flatnonzero(y == cls)
+    fold[obs] = np.arange(len(obs)) % 5 + 1
+
+grid = (
+    [("Linear", None, C, None) for C in (0.1, 1, 10)]
+    + [("Polynomial", d, C, None) for d in (2, 3, 4) for C in (0.1, 1, 10)]
+    + [("Radial", None, C, gamma)
+       for gamma in (0.01, 0.1) for C in (0.1, 1, 10)]
+)
+error = np.empty((5, len(grid)))
+
+for k in range(1, 6):
+    fitting = fold != k
+    center = X[fitting].mean(axis=0)
+    scale = X[fitting].std(axis=0, ddof=1)
+    x_fit = (X[fitting] - center) / scale
+    x_valid = (X[~fitting] - center) / scale
+
+    for j, (kernel, degree, C, gamma) in enumerate(grid):
+        args = {"kernel": {"Linear": "linear", "Polynomial": "poly",
+                           "Radial": "rbf"}[kernel], "C": C, "tol": 1e-7}
+        if kernel == "Polynomial":
+            args.update(degree=degree, gamma=1 / X.shape[1], coef0=1)
+        if kernel == "Radial":
+            args["gamma"] = gamma
+        fit = SVC(**args).fit(x_fit, y[fitting])
+        error[k - 1, j] = np.mean(fit.predict(x_valid) != y[~fitting])
+
+results = pd.DataFrame(grid, columns=["kernel", "degree", "C", "gamma"])
+results["cv_error"] = error.mean(axis=0)
+print(results.to_string(index=False))
+print(results.loc[results["cv_error"].idxmin()])
+```
+:::
+:::
+
+## Question 2: Write and use a short SVM analysis skill
+
+No solution can be provided for Question 2.
