@@ -1,0 +1,30 @@
+---
+title: "Final Project"
+pagetitle: "Final Project"
+body-classes: "lecture-page project-page"
+format:
+  html:
+    embed-resources: true
+    html-math-method: mathml
+    page-layout: full
+    toc: true
+    toc-location: body
+    toc-title: "On this page"
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show the workflow"
+---
+
+Links:
+
+<https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition>
+
+<https://www.sciencedirect.com/science/article/pii/S2352340919306985?via%3Dihub>
+
+Authors:
+
+Bich-Yen Pham (NetID: bpham9, GitHub: Bich-Yen)
+
+Katherine Yang (NetID: kyang53, GitHub: katherinesophieyang)
+
+## Abstract
