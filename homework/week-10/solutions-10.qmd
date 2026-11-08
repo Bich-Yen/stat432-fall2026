@@ -1,0 +1,512 @@
+---
+title: "Homework 10 Solutions"
+pagetitle: "Homework 10 Solutions"
+body-classes: "lecture-page practice-page"
+engine: knitr
+knitr:
+  opts_chunk:
+    jupyter_compat: true
+execute:
+  enabled: true
+  cache: false
+  warning: false
+  message: false
+format:
+  html:
+    html-math-method: mathml
+    page-layout: full
+    toc: true
+    toc-location: body
+    toc-title: "On this page"
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show the solution code"
+    fig-align: center
+---
+
+Use either language and run its blocks in order. Both use ordinary RLT forests and the same model and tuning settings. The simulation generates independent random samples in R and Python. The MNIST analysis uses exactly the same supplied observations and split. Run the code from the folder containing `data/mnist-first2000.csv.gz`.
+
+The R node-size control is `nmin`; the corresponding Python control is `min_samples_leaf`. Both stop splitting nodes with at most that many observations. Neither name should be interpreted as a guaranteed lower bound on every child leaf's size.
+
+## Question 1: Bias-variance trade-off simulation
+
+### Original question
+
+Two important tuning parameters of random forests are node size and `mtry`. We have performed some preliminary analysis in class. The goal of this question is to perform a larger simulation study for these two tuning parameters.
+
+Consider a regression model with five jointly normally distributed predictors. Each predictor has mean 0 and variance 1, and the correlation between any two different predictors is 0.3. The response is
+
+$$
+Y=X_1+X_3+X_5+\varepsilon,
+\qquad \varepsilon\sim N(0,1),
+$$
+
+where the noise is independent of the predictors. Thus the true regression function is $f(\mathbf{x})=x_1+x_3+x_5$.
+
+a. Set up a simulation study with 100 repetitions. Generate 200 test predictor vectors once and keep them fixed. In each repetition, generate 200 new training observations and use the same training data for all tuning settings. Fit 500-tree forests, drawing 200 observations with replacement for each tree. Make the following two comparisons:
+
+   - Fix `mtry` at 3 and vary node size over $1,5,10,20,30$.
+   - Fix node size at 10 and vary `mtry` over $1,2,3,4,5$.
+
+   Leave all other fitting parameters at their defaults. Record the predictions at each test point across repetitions. For each setting, estimate the squared bias and variance at each test point, then average them over the 200 test points. Compare predictions with $f(\mathbf{x})$ when estimating bias. Produce two figures, one for each tuning parameter, showing the averaged squared bias and variance. Set a random seed and report it.
+
+b. Discuss your results in terms of the bias-variance trade-off:
+
+   - How does a large node size, such as 30, affect the fit in this example?
+   - What are the benefits and drawbacks of using a large `mtry` value?
+   - If each tree instead sampled 100 observations with replacement, would you expect the preferred node size to shift toward smaller or larger values? Explain your reasoning. You may use an additional simulation to help, but a particular pattern is not guaranteed.
+
+### Solution
+
+**a. Simulation.** Bias and variance describe repeated predictions at the same predictor value. Keep the test predictors fixed, generate a new training sample in each repetition, and reuse that training sample across all candidate settings. The regression function at a test point is known, so no test responses are needed for these two calculations.
+
+At each test point, average the 100 fitted predictions to obtain $\overline f(\mathbf{x})$. Estimate squared bias by $\{\overline f(\mathbf{x})-f(\mathbf{x})\}^2$, and variance by the mean squared deviation of the predictions from $\overline f(\mathbf{x})$. We use divisor 100 for this empirical variance. Average each quantity over the 200 fixed test points.
+
+::: {.panel-tabset .sync-code-panels group="homework-10-language"}
+
+#### R
+
+```{r}
+#| label: hw10-q1-data-r
+set.seed(432)
+nsim <- 100
+Sigma <- matrix(0.3, 5, 5)
+diag(Sigma) <- 1
+test_x <- MASS::mvrnorm(200, rep(0, 5), Sigma)
+f_test <- test_x[, 1] + test_x[, 3] + test_x[, 5]
+node_size <- c(1, 5, 10, 20, 30)
+mtry_values <- 1:5
+pred_node <- array(NA_real_, c(nsim, 200, length(node_size)))
+pred_mtry <- array(NA_real_, c(nsim, 200, length(mtry_values)))
+```
+
+```{r}
+#| label: hw10-q1-fit-r
+for (s in 1:nsim) {
+  train_x <- MASS::mvrnorm(200, rep(0, 5), Sigma)
+  train_y <- train_x[, 1] + train_x[, 3] + train_x[, 5] + rnorm(200)
+
+  for (j in seq_along(node_size)) {
+    fit <- RLT::RLT(
+      train_x, train_y, model = "regression", ntrees = 500,
+      mtry = 3, nmin = node_size[j],
+      resample.prob = 1, resample.replace = TRUE,
+      ncores = 1, seed = 432 + s, verbose = FALSE
+    )
+    pred_node[s, , j] <- predict(fit, test_x)$Prediction
+  }
+
+  for (j in seq_along(mtry_values)) {
+    fit <- RLT::RLT(
+      train_x, train_y, model = "regression", ntrees = 500,
+      mtry = mtry_values[j], nmin = 10,
+      resample.prob = 1, resample.replace = TRUE,
+      ncores = 1, seed = 432 + s, verbose = FALSE
+    )
+    pred_mtry[s, , j] <- predict(fit, test_x)$Prediction
+  }
+}
+```
+
+```{r}
+#| label: hw10-q1-summary-r
+mean_node <- apply(pred_node, c(2, 3), mean)
+mean_mtry <- apply(pred_mtry, c(2, 3), mean)
+# R's var() uses divisor nsim - 1; convert to the empirical divisor nsim.
+node_result <- data.frame(
+  node_size = node_size,
+  squared_bias = colMeans((mean_node - f_test)^2),
+  variance = colMeans(apply(pred_node, c(2, 3), var)) * (nsim - 1) / nsim
+)
+mtry_result <- data.frame(
+  mtry = mtry_values,
+  squared_bias = colMeans((mean_mtry - f_test)^2),
+  variance = colMeans(apply(pred_mtry, c(2, 3), var)) * (nsim - 1) / nsim
+)
+knitr::kable(node_result, digits = 4)
+knitr::kable(mtry_result, digits = 4)
+```
+
+```{r}
+#| label: hw10-q1-node-r
+#| fig-width: 8.5
+#| fig-height: 4.2
+#| out-width: "90%"
+#| fig-cap: "Squared bias and variance as node size changes, with mtry fixed at 3."
+#| fig-alt: "Two curves show averaged squared bias and variance over the node-size grid."
+matplot(
+  node_size, node_result[, c("squared_bias", "variance")],
+  type = "b", pch = c(16, 17), lty = 1, lwd = 2,
+  col = c("#13294B", "#C84A16"),
+  ylim = c(0, 1.1 * max(node_result[, -1])),
+  xlab = "Node size", ylab = "Average squared bias or variance"
+)
+legend("bottomleft", c("Squared bias", "Variance"),
+       col = c("#13294B", "#C84A16"), pch = c(16, 17), lty = 1,
+       lwd = 2, bty = "n")
+```
+
+```{r}
+#| label: hw10-q1-mtry-r
+#| fig-width: 8.5
+#| fig-height: 4.2
+#| out-width: "90%"
+#| fig-cap: "Squared bias and variance as mtry changes, with node size fixed at 10."
+#| fig-alt: "Two curves show averaged squared bias and variance over the mtry grid."
+matplot(
+  mtry_values, mtry_result[, c("squared_bias", "variance")],
+  type = "b", pch = c(16, 17), lty = 1, lwd = 2,
+  col = c("#13294B", "#C84A16"),
+  ylim = c(0, 1.1 * max(mtry_result[, -1])),
+  xlab = "mtry", ylab = "Average squared bias or variance"
+)
+legend("topright", c("Squared bias", "Variance"),
+       col = c("#13294B", "#C84A16"), pch = c(16, 17), lty = 1,
+       lwd = 2, bty = "n")
+```
+
+#### Python
+
+```{python}
+#| label: hw10-q1-data-python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from rlt import RLT_reg, RLT_cla
+
+rng = np.random.default_rng(432)
+nsim = 100
+Sigma = np.full((5, 5), 0.3)
+np.fill_diagonal(Sigma, 1)
+test_x = rng.multivariate_normal(np.zeros(5), Sigma, size=200)
+f_test = test_x[:, [0, 2, 4]].sum(axis=1)
+node_size = np.array([1, 5, 10, 20, 30])
+mtry_values = np.arange(1, 6)
+pred_node = np.empty((nsim, 200, len(node_size)))
+pred_mtry = np.empty((nsim, 200, len(mtry_values)))
+```
+
+```{python}
+#| label: hw10-q1-fit-python
+for s in range(nsim):
+    train_x = rng.multivariate_normal(np.zeros(5), Sigma, size=200)
+    train_y = train_x[:, [0, 2, 4]].sum(axis=1) + rng.normal(size=200)
+
+    for j, size in enumerate(node_size):
+        fit = RLT_reg(
+            n_estimators=500, mtry=3, min_samples_leaf=int(size),
+            resample_prob=1, resample_replace=True,
+            n_jobs=1, random_state=433 + s,
+        ).fit(train_x, train_y)
+        pred_node[s, :, j] = fit.predict(test_x)
+
+    for j, mtry in enumerate(mtry_values):
+        fit = RLT_reg(
+            n_estimators=500, mtry=int(mtry), min_samples_leaf=10,
+            resample_prob=1, resample_replace=True,
+            n_jobs=1, random_state=433 + s,
+        ).fit(train_x, train_y)
+        pred_mtry[s, :, j] = fit.predict(test_x)
+```
+
+```{python}
+#| label: hw10-q1-summary-python
+node_result = pd.DataFrame({
+    "node_size": node_size,
+    "squared_bias": ((pred_node.mean(axis=0) - f_test[:, None])**2).mean(axis=0),
+    "variance": pred_node.var(axis=0, ddof=0).mean(axis=0),
+})
+mtry_result = pd.DataFrame({
+    "mtry": mtry_values,
+    "squared_bias": ((pred_mtry.mean(axis=0) - f_test[:, None])**2).mean(axis=0),
+    "variance": pred_mtry.var(axis=0, ddof=0).mean(axis=0),
+})
+print(node_result.round(4).to_string(index=False))
+print(mtry_result.round(4).to_string(index=False))
+```
+
+```{python}
+#| label: hw10-q1-node-python
+#| fig-width: 8.5
+#| fig-height: 4.2
+#| out-width: "90%"
+#| fig-cap: "Squared bias and variance as node size changes, with mtry fixed at 3."
+#| fig-alt: "Two curves show averaged squared bias and variance over the node-size grid."
+fig, ax = plt.subplots(figsize=(8.5, 4.2))
+ax.plot(node_size, node_result["squared_bias"], "o-", color="#13294B", label="Squared bias")
+ax.plot(node_size, node_result["variance"], "^-", color="#C84A16", label="Variance")
+ax.set(xlabel="Node size", ylabel="Average squared bias or variance",
+       ylim=(0, 1.1 * node_result.iloc[:, 1:].to_numpy().max()))
+ax.legend(frameon=False, loc="lower left")
+fig.tight_layout()
+plt.show()
+```
+
+```{python}
+#| label: hw10-q1-mtry-python
+#| fig-width: 8.5
+#| fig-height: 4.2
+#| out-width: "90%"
+#| fig-cap: "Squared bias and variance as mtry changes, with node size fixed at 10."
+#| fig-alt: "Two curves show averaged squared bias and variance over the mtry grid."
+fig, ax = plt.subplots(figsize=(8.5, 4.2))
+ax.plot(mtry_values, mtry_result["squared_bias"], "o-", color="#13294B", label="Squared bias")
+ax.plot(mtry_values, mtry_result["variance"], "^-", color="#C84A16", label="Variance")
+ax.set(xlabel="mtry", ylabel="Average squared bias or variance",
+       ylim=(0, 1.1 * mtry_result.iloc[:, 1:].to_numpy().max()))
+ax.set_xticks(mtry_values)
+ax.legend(frameon=False, loc="upper right")
+fig.tight_layout()
+plt.show()
+```
+
+:::
+
+The numerical values differ because the two languages generated different training samples and test points. The comparison concerns the pattern within each experiment, with the same realized data used for all candidates in that experiment. The sum of the two reported quantities is the empirical MSE for estimating $f(\mathbf{x})$. Predicting a new noisy response adds the noise variance, which is 1 here.
+
+**b. Interpretation.** Both runs show squared bias increasing and variance decreasing as node size grows. Larger nodes average responses over broader regions, combining observations with different values of $x_1+x_3+x_5$. A large value such as 30 therefore oversmooths the regression function in this experiment. An interior optimum or a U-shaped error curve is not guaranteed for every dataset or tuning grid.
+
+Both runs also show squared bias decreasing and variance increasing as `mtry` grows. Larger `mtry` gives useful predictors more opportunities to compete at a split. This can reduce the bias caused by repeatedly considering less useful variables. It also makes the trees' split choices more alike, which can reduce the benefit of averaging. Increasing `mtry` need not increase variance in every example. The correlated predictors can also substitute for one another.
+
+With only 100 bootstrap draws per tree, a fixed node-size threshold usually permits fewer splits and broader terminal regions. A smaller threshold may help recover local detail, so a shift toward a smaller preferred node size is plausible. However, the changed tree variability and overlap can also affect the comparison, so this is an expectation to investigate rather than a universal rule.
+
+## Question 2: Tuning random forests for MNIST
+
+### Original question
+
+Use `mnist-first2000.csv.gz` from the combined ZIP. It contains 2,000 MNIST observations, with the digit label `Digit` and 784 pixel values.
+
+- From the first 1,000 observations, keep digits 1, 6, and 7 as the training data. From the remaining 1,000 observations, keep the same digits as the test data.
+- Fit PCA to the training pixels, centering but not scaling them. Use the first 20 principal components as predictors, and project the test observations using the same training means and loadings.
+
+Complete the following tasks using RLT classification forests with 1,000 trees. For each tree, draw a bootstrap sample of the same size as the training set.
+
+a. Fit a random forest with the default `mtry` and node-size settings. Report the out-of-bag (OOB) misclassification rate.
+
+b. Construct a grid of `mtry` and node-size values to tune the model. Select the setting using OOB misclassification rate. Report the OOB error for each setting and the selected values. Calculate and present the selected forest's OOB permutation variable importance for the 20 principal components. Comment on your results.
+
+c. Apply the selected model to the test data and report the misclassification rate and confusion matrix. Use the test labels only for this final assessment.
+
+### Solution
+
+**Data and PCA.** The original split gives 327 training images and 317 test images after retaining digits 1, 6, and 7. Estimate the pixel means and PCA loadings from the training images. Apply that same transformation to the test images. PCA centers the pixels without scaling or whitening them.
+
+::: {.panel-tabset .sync-code-panels group="homework-10-language"}
+
+#### R
+
+```{r}
+#| label: hw10-q2-pca-r
+data_file <- if (file.exists("data/mnist-first2000.csv.gz")) {
+  "data/mnist-first2000.csv.gz"
+} else {
+  "practice/weeks/week-10/data/mnist-first2000.csv.gz"
+}
+mnist <- read.csv(gzfile(data_file))
+train <- subset(mnist[1:1000, ], Digit %in% c(1, 6, 7))
+test <- subset(mnist[1001:2000, ], Digit %in% c(1, 6, 7))
+pca <- prcomp(train[, -1], center = TRUE, scale. = FALSE, rank. = 20)
+X <- pca$x[, 1:20]
+Xtest <- predict(pca, newdata = test[, -1])[, 1:20]
+y <- factor(train$Digit, levels = c(1, 6, 7))
+table(y)
+```
+
+#### Python
+
+```{python}
+#| label: hw10-q2-pca-python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from rlt import RLT_cla
+
+from pathlib import Path
+
+data_file = Path("data/mnist-first2000.csv.gz")
+if not data_file.exists():
+    data_file = Path("practice/weeks/week-10/data/mnist-first2000.csv.gz")
+mnist = pd.read_csv(data_file)
+train = mnist.iloc[:1000].loc[lambda d: d["Digit"].isin([1, 6, 7])]
+test = mnist.iloc[1000:].loc[lambda d: d["Digit"].isin([1, 6, 7])]
+pca = PCA(n_components=20, svd_solver="full")
+X = pca.fit_transform(train.drop(columns="Digit"))
+Xtest = pca.transform(test.drop(columns="Digit"))
+y = train["Digit"].to_numpy()
+pd.Series(y).value_counts().sort_index()
+```
+
+:::
+
+**a. Initial fit.** With 20 predictors, both RLT implementations default to `mtry = 10` and node size 5. We fix 1,000 trees and full-size bootstrap samples in both languages. The OOB error evaluates predictions obtained only from trees that did not sample the observation. The initial OOB errors are 14/327 (4.28%) in R and 13/327 (3.98%) in Python. Small numerical and sign differences in the PCA scores can affect tied split choices; they do not change the statistical setup.
+
+::: {.panel-tabset .sync-code-panels group="homework-10-language"}
+
+#### R
+
+```{r}
+#| label: hw10-q2-initial-r
+initial <- RLT::RLT(
+  X, y, model = "classification", ntrees = 1000,
+  resample.prob = 1, resample.replace = TRUE,
+  ncores = 1, seed = 432, verbose = FALSE
+)
+knitr::kable(data.frame(OOB_error = mean(initial$Prediction != y)), digits = 4)
+```
+
+#### Python
+
+```{python}
+#| label: hw10-q2-initial-python
+initial = RLT_cla(
+    n_estimators=1000, resample_prob=1, resample_replace=True,
+    n_jobs=1, random_state=432,
+).fit(X, y)
+pd.DataFrame({"OOB_error": [initial.oob_error_]}).round(4)
+```
+
+:::
+
+**b. OOB tuning and variable importance.** This example uses the original solution's nine combinations: `mtry` values 5, 10, and 20, and node sizes 1, 5, and 10. Other reasonable grids are possible. Select the smallest OOB misclassification rate; in a tie, this solution uses the first setting in the displayed order. Test labels do not enter this choice.
+
+::: {.panel-tabset .sync-code-panels group="homework-10-language"}
+
+#### R
+
+```{r}
+#| label: hw10-q2-tuning-r
+grid <- expand.grid(mtry = c(5, 10, 20), nmin = c(1, 5, 10))
+grid$OOB_error <- NA_real_
+for (j in 1:nrow(grid)) {
+  fit <- RLT::RLT(
+    X, y, model = "classification", ntrees = 1000,
+    mtry = grid$mtry[j], nmin = grid$nmin[j],
+    resample.prob = 1, resample.replace = TRUE,
+    ncores = 1, seed = 432, verbose = FALSE
+  )
+  grid$OOB_error[j] <- mean(fit$Prediction != y)
+}
+knitr::kable(grid, digits = 4)
+best <- which.min(grid$OOB_error)
+knitr::kable(grid[best, ], digits = 4)
+```
+
+```{r}
+#| label: hw10-q2-importance-fit-r
+fit <- RLT::RLT(
+  X, y, model = "classification", ntrees = 1000,
+  mtry = grid$mtry[best], nmin = grid$nmin[best],
+  resample.prob = 1, resample.replace = TRUE,
+  importance = TRUE, ncores = 1, seed = 432, verbose = FALSE
+)
+vi <- data.frame(PC = paste0("PC", 1:20), VI = as.numeric(fit$VarImp))
+```
+
+```{r}
+#| label: hw10-q2-importance-r
+#| fig-width: 8.5
+#| fig-height: 4.2
+#| out-width: "90%"
+#| fig-cap: "OOB permutation importance of the 20 principal components for the selected forest."
+#| fig-alt: "A bar chart compares OOB permutation importance across PC1 through PC20."
+barplot(vi$VI, names.arg = vi$PC, las = 2, col = "#13294B",
+        border = NA, ylab = "OOB permutation importance")
+abline(h = 0, col = "#C84A16")
+```
+
+#### Python
+
+```{python}
+#| label: hw10-q2-tuning-python
+grid = pd.DataFrame(
+    [(mtry, size) for size in [1, 5, 10] for mtry in [5, 10, 20]],
+    columns=["mtry", "node_size"],
+)
+allerror = []
+for setting in grid.itertuples():
+    fit = RLT_cla(
+        n_estimators=1000, mtry=setting.mtry,
+        min_samples_leaf=setting.node_size,
+        resample_prob=1, resample_replace=True,
+        n_jobs=1, random_state=432,
+    ).fit(X, y)
+    allerror.append(fit.oob_error_)
+grid["OOB_error"] = allerror
+print(grid.round(4).to_string(index=False))
+best = grid.loc[grid["OOB_error"].idxmin()]
+print(best.to_frame().T.round(4).to_string(index=False))
+```
+
+```{python}
+#| label: hw10-q2-importance-fit-python
+fit = RLT_cla(
+    n_estimators=1000, mtry=int(best["mtry"]),
+    min_samples_leaf=int(best["node_size"]),
+    resample_prob=1, resample_replace=True,
+    importance="permute", n_jobs=1, random_state=432,
+).fit(X, y)
+vi = pd.DataFrame({
+    "PC": [f"PC{j}" for j in range(1, 21)],
+    "VI": np.asarray(fit.feature_importances_).ravel(),
+})
+```
+
+```{python}
+#| label: hw10-q2-importance-python
+#| fig-width: 8.5
+#| fig-height: 4.2
+#| out-width: "90%"
+#| fig-cap: "OOB permutation importance of the 20 principal components for the selected forest."
+#| fig-alt: "A bar chart compares OOB permutation importance across PC1 through PC20."
+fig, ax = plt.subplots(figsize=(8.5, 4.2))
+ax.bar(vi["PC"], vi["VI"], color="#13294B")
+ax.axhline(0, color="#C84A16", linewidth=1)
+ax.set(ylabel="OOB permutation importance")
+ax.tick_params(axis="x", labelrotation=90)
+fig.tight_layout()
+plt.show()
+```
+
+:::
+
+Both languages select `mtry = 5` and node size 1, with OOB error $12/327\approx3.67\%$. The three node-size settings at `mtry = 5` tie in this run, so the selected setting is not uniquely better according to OOB error.
+
+PC2 and PC1 have the largest importance values in both runs. Large positive importance means that permuting a component increased OOB prediction error. Small negative estimates can occur through sampling variation. These are importance values for the principal components, not for individual pixels. A component's explained pixel variation does not, by itself, measure its ability to distinguish digits. Likewise, importance describes the fitted forest's predictive reliance rather than a causal effect.
+
+**c. Final test assessment.** Use the selected forest and the test scores calculated from the training PCA. The confusion matrix has observed digits in its rows and predicted digits in its columns.
+
+::: {.panel-tabset .sync-code-panels group="homework-10-language"}
+
+#### R
+
+```{r}
+#| label: hw10-q2-test-r
+prediction <- predict(fit, Xtest)$Prediction
+test_error <- mean(prediction != test$Digit)
+knitr::kable(data.frame(test_error = test_error), digits = 4)
+confusion <- table(
+  Observed = factor(test$Digit, levels = c(1, 6, 7)),
+  Predicted = factor(prediction, levels = c(1, 6, 7))
+)
+knitr::kable(confusion)
+```
+
+#### Python
+
+```{python}
+#| label: hw10-q2-test-python
+prediction = fit.predict(Xtest)
+y_test = test["Digit"].to_numpy()
+test_error = np.mean(prediction != y_test)
+print(pd.DataFrame({"test_error": [test_error]}).round(4).to_string(index=False))
+confusion = pd.crosstab(
+    pd.Series(y_test, name="Observed"),
+    pd.Series(prediction, name="Predicted"),
+).reindex(index=[1, 6, 7], columns=[1, 6, 7], fill_value=0)
+print(confusion)
+```
+
+:::
+
+Both languages make the same 10 errors among 317 test images, giving test error $10/317\approx3.15\%$. The OOB table supports selecting the forest settings, while the held-out test error assesses the resulting analysis. PCA was learned from the complete training predictor matrix, so the OOB comparison treats that representation as fixed. The independent test images assess the full PCA-plus-forest procedure. Do not change the tuning settings after inspecting their test performance.
