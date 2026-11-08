@@ -50,7 +50,7 @@ a.  Perform one iteration: calculate the cluster means, then assign each observa
     # sweep subtracts mean coordinates from columns and squares the differences
     # rowSums adds the x1 and x2 coordinates together per observation
     distances <- sapply(1:2, function(k){
-      sqrt(rowSums(sweep(data, MARGIN = 2, mk[k, ])^2))
+      rowSums(sweep(data, MARGIN = 2, mk[k, ])^2)
     })
 
     # Assign each observation to its closest mean using Euclidean distance
@@ -267,10 +267,60 @@ The file `data/mtcars.csv` contains 11 numerical variables for 32 cars, includin
 
 a.  Standardize each numerical variable to have mean 0 and standard deviation 1. Using Euclidean distance, perform hierarchical clustering with single, complete, and average linkage. Plot the three dendrograms with the car names and compare the results.
 
-    ```{r}
+    ```{r, fig.width = 14}
     # Source: Week 11 Lecture: Hierarchical Clustering
     # Load the data
     df_mtcars <- read.csv("data/mtcars.csv")
+
+    X_cars <- df_mtcars[, -1]
+    y_cars <- df_mtcars$car
+
+    # Standardize each variable to have mean 0 and sd 1
+    X_cars_scaled <- scale(X_cars, center = TRUE, scale = TRUE)
+
+    # Use Euclidean distance to perform hierarchial clustering
+    hcfit1 <- hclust(dist(X_cars_scaled, method = "euclidean"), 
+                     method = "single")
+    hcfit2 <- hclust(dist(X_cars_scaled, method = "euclidean"), 
+                     method = "complete")
+    hcfit3 <- hclust(dist(X_cars_scaled, method = "euclidean"), 
+                     method = "average")
+
+    # Plot the three dendrograms with car names
+    # mar = c(bottom, left, top, right): controls plot margins in lines of text
+    par(mfrow = c(1, 3), mar = c(7, 4, 3, 1))
+
+    # hang = -1 makes the leaves line up at the bottom
+    plot(hcfit1, hang = -1, labels = y_cars,
+         main = "Single linkage", xlab = "", sub = "",
+         cex = 0.8)
+    plot(hcfit2, hang = -1, labels = y_cars,
+         main = "Complete linkage", xlab = "", sub = "",
+         cex = 0.8)
+    plot(hcfit3, hang = -1, labels = y_cars,
+         main = "Average linkage", xlab = "", sub = "",
+         cex = 0.8)
     ```
 
 b.  Choose one linkage method and a number of clusters that you consider reasonable. Report the cluster memberships and a table of cluster means on the original variable scales. Describe the main characteristics of the groups and explain your choice using the dendrogram and table. Briefly explain why standardizing the variables matters for this analysis.
+
+    ```{r}
+    car_clusters <- cutree(hcfit2, k = 4)
+
+    # Car names grouped by cluster
+    split(y_cars, car_clusters)
+
+    # Calculate the cluster means on the original variable scales
+    cluster_means <- aggregate(
+      X_cars, # original and unscaled measurements
+      by = list(cluster = car_clusters), # groups cars according to cutree()
+      FUN = mean # calculates each variable's mean within each group
+    )
+    cluster_means
+    ```
+
+    The groups have relatively close average `drat`, `qsec`, and `gear`, and they have different averages for `mpg`, `cyl`, `wt`, `disp`, `hp`, and `carb`. Cluster 2 has the lowest average for `disp` and `hp`, but they have the highest average `mpg` (these cars have better fuel economy, but they have less power). Clusters with higher averages of `disp` and `hp` generally have lower `mpg` averages.
+
+    Based on the dendrograms above, the complete linkage graph showed a large height gap compared to single linkage and average linkage. The complete linkage dendrogram has a large jump in height at $K = 4$. The `cluster_mean` table illustrates differences in group means for variables `mpg`, `disp`, and `wt`. Therefore, the complete linkage method with $K = 4$ clusters is reasonable.
+
+    Standardizing the variables matters for this analysis because Euclidean distance depends on the scale and magnitude of the variables. Without standardization, variables with large magnitudes and ranges could dominate the clustering.
