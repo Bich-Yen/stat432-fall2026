@@ -1,0 +1,223 @@
+---
+title: "Golub Leukemia: Unsupervised Clustering"
+pagetitle: "Golub Leukemia Clustering"
+format:
+  html:
+    embed-resources: true
+    toc: false
+execute:
+  echo: false
+  warning: false
+  message: false
+  error: true
+  execute-dir: file
+---
+
+```{=html}
+<style>
+@page { size: letter; margin: 0.35in; }
+body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.04; }
+.quarto-title-block { margin: 0 0 3px; }
+h1 { font-size: 16pt; margin: 0 0 4px; }
+h2 { font-size: 11pt; margin: 5px 0 2px; }
+p { margin: 2px 0; }
+table { font-size: 8.5pt; margin: 1px 0; }
+th, td { padding: 1px 4px !important; }
+figure { margin: 1px auto; }
+.fig-caption { font-size: 8pt; }
+@media print {
+  body { font-size: 11pt; }
+  h1, h2 { page-break-after: avoid; }
+  table, figure { page-break-inside: avoid; }
+  p { orphans: 2; widows: 2; }
+}
+</style>
+```
+
+```{r analysis_setup, include=FALSE}
+required <- c("cluster", "ggplot2", "kernlab", "knitr")
+missing <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
+if (length(missing)) stop("Install required R packages: ", paste(missing, collapse = ", "))
+
+seed <- 43212L
+set.seed(seed)
+data_path <- file.path("..", "homework", "week-12", "data", "golub.csv")
+if (!file.exists(data_path)) stop("Could not locate homework/week-12/data/golub.csv")
+golub <- read.csv(data_path, check.names = FALSE)
+gene_names <- paste0("gene_", seq_len(3051))
+if (!all(c("sample_id", "leukemia_type", gene_names) %in% names(golub))) {
+  stop("Golub data must include sample_id, leukemia_type, and gene_1 through gene_3051.")
+}
+X <- as.matrix(golub[, gene_names])
+storage.mode(X) <- "double"
+y <- factor(golub$leukemia_type, levels = c("ALL", "AML"))
+if (nrow(X) != 38L || anyNA(X) || any(!is.finite(X)) ||
+    anyNA(y) || any(apply(X, 2, sd) == 0)) {
+  stop("Expected 38 samples and complete, finite, variable gene measurements and class labels.")
+}
+
+scaled_X <- scale(X)
+pca <- prcomp(scaled_X, center = FALSE, scale. = FALSE, rank. = 10)
+
+fit_clusters <- function(scores, method, k, sigma = NA_real_) {
+  if (method == "K-means") {
+    labels <- kmeans(scores, centers = k, nstart = 30, iter.max = 100)$cluster
+  } else if (method == "Ward") {
+    labels <- cutree(hclust(dist(scores), method = "ward.D2"), k = k)
+  } else {
+    labels <- as.integer(kernlab::specc(
+      as.matrix(scores), centers = k, kernel = "rbfdot",
+      kpar = list(sigma = sigma), nstart = 10
+    ))
+  }
+  labels
+}
+
+adjusted_rand <- function(a, b) {
+  tab <- table(a, b)
+  choose2 <- function(z) z * (z - 1) / 2
+  n_pairs <- choose2(sum(tab))
+  if (n_pairs == 0) return(NA_real_)
+  index <- sum(choose2(tab))
+  expected <- sum(choose2(rowSums(tab))) * sum(choose2(colSums(tab))) / n_pairs
+  maximum <- (sum(choose2(rowSums(tab))) + sum(choose2(colSums(tab)))) / 2
+  if (maximum == expected) return(1)
+  (index - expected) / (maximum - expected)
+}
+
+candidate_grid <- expand.grid(
+  method = c("K-means", "Ward", "Spectral"),
+  k = 2:3, pcs = c(2L, 5L, 10L),
+  sigma_multiplier = c(1, 0.5, 2),
+  stringsAsFactors = FALSE
+)
+candidate_grid <- candidate_grid[
+  candidate_grid$method == "Spectral" | candidate_grid$sigma_multiplier == 1,
+]
+candidate_grid$silhouette <- NA_real_
+candidate_grid$min_cluster_n <- NA_integer_
+candidate_labels <- vector("list", nrow(candidate_grid))
+
+for (i in seq_len(nrow(candidate_grid))) {
+  candidate <- candidate_grid[i, ]
+  scores <- pca$x[, seq_len(candidate$pcs), drop = FALSE]
+  base_sigma <- 1 / median(as.vector(dist(scores))^2)
+  sigma <- base_sigma * candidate$sigma_multiplier
+  labels <- fit_clusters(scores, candidate$method, candidate$k, sigma)
+  candidate_labels[[i]] <- labels
+  candidate_grid$silhouette[i] <- mean(cluster::silhouette(labels, dist(scores))[, "sil_width"])
+  candidate_grid$min_cluster_n[i] <- min(table(labels))
+}
+
+candidate_grid$setting <- paste0(
+  "k=", candidate_grid$k, ", PCs=", candidate_grid$pcs,
+  ifelse(candidate_grid$method == "Spectral",
+         paste0(", sigma x ", candidate_grid$sigma_multiplier), "")
+)
+best_index_by_method <- vapply(
+  unique(candidate_grid$method),
+  function(method) {
+    idx <- which(candidate_grid$method == method)
+    idx[which.max(candidate_grid$silhouette[idx])]
+  },
+  integer(1)
+)
+best_indices <- as.integer(best_index_by_method)
+best_by_method <- candidate_grid[best_indices, ]
+best_by_method$stability_ari <- NA_real_
+
+for (i in seq_len(nrow(best_by_method))) {
+  candidate <- best_by_method[i, ]
+  reference <- candidate_labels[[best_indices[i]]]
+  scores <- pca$x[, seq_len(candidate$pcs), drop = FALSE]
+  stability <- numeric(8)
+  for (b in seq_len(8)) {
+    subset_id <- sort(sample(seq_len(nrow(X)), size = 30L))
+    subset_scores <- prcomp(
+      scaled_X[subset_id, , drop = FALSE], center = FALSE, scale. = FALSE,
+      rank. = candidate$pcs
+    )$x[, seq_len(candidate$pcs), drop = FALSE]
+    base_sigma <- 1 / median(as.vector(dist(subset_scores))^2)
+    subset_labels <- fit_clusters(
+      subset_scores, candidate$method, candidate$k,
+      base_sigma * candidate$sigma_multiplier
+    )
+    overlap <- subset_id
+    stability[b] <- adjusted_rand(reference[overlap], subset_labels)
+  }
+  best_by_method$stability_ari[i] <- mean(stability, na.rm = TRUE)
+}
+best_by_method <- best_by_method[
+  order(-best_by_method$silhouette, -best_by_method$stability_ari), ]
+selected <- best_by_method[1, ]
+selected_method <- selected$method
+selected_k <- selected$k
+selected_pcs <- selected$pcs
+selected_sigma_multiplier <- selected$sigma_multiplier
+selected_index <- best_indices[match(selected_method, names(best_index_by_method))]
+selected_labels <- candidate_labels[[selected_index]]
+
+# Known leukemia labels are consulted only after the label-free model selection.
+class_counts <- table(
+  Cluster = factor(selected_labels, levels = seq_len(selected_k)),
+  Type = factor(y, levels = levels(y))
+)
+cluster_table <- data.frame(
+  Cluster = seq_len(selected_k),
+  N = rowSums(class_counts),
+  ALL = class_counts[, "ALL"],
+  AML = class_counts[, "AML"]
+)
+plot_data <- data.frame(
+  PC1 = pca$x[, 1], PC2 = pca$x[, 2],
+  Cluster = factor(selected_labels), Type = y
+)
+cv_table <- data.frame(
+  Algorithm = best_by_method$method,
+  Setting = best_by_method$setting,
+  Silhouette = best_by_method$silhouette,
+  Min_cluster_n = best_by_method$min_cluster_n,
+  Stability_ARI = best_by_method$stability_ari,
+  Selected = ifelse(best_by_method$method == selected_method, "Yes", "")
+)
+variance_2pc <- 100 * sum(pca$sdev[1:2]^2) / ncol(X)
+```
+
+## Data and selection
+
+The Golub data contain 38 leukemia samples and 3,051 gene measurements. To explore structure without using diagnoses, all gene predictors were standardized and reduced by PCA; clustering used the first 2, 5, or 10 PCs. With seed `r seed`, K-means, Ward hierarchical, and Gaussian spectral clustering were compared for 2 or 3 clusters; spectral graph bandwidth was also varied. Average silhouette was the primary selection criterion; resampling stability broke ties. Eight 30-sample refits assessed stability (adjusted Rand agreement with each full-data fit); minimum cluster size checks for tiny groups. Leukemia labels did not affect fitting or selection.
+
+```{r candidate_table}
+knitr::kable(
+  cv_table, digits = 6,
+  col.names = c("Algorithm", "Best setting", "Silhouette", "Smallest cluster", "Stability ARI", "Selected"),
+  caption = "Best setting per method; select by silhouette, with stability as a tie-breaker/check."
+)
+```
+
+## Selected clustering
+
+**`r selected_method`** (`r selected$setting`) was selected (silhouette `r sprintf("%.6f", selected$silhouette)`; smallest cluster `r selected$min_cluster_n`; stability ARI `r sprintf("%.3f", selected$stability_ari)`). Only this model's clustering is shown. PCA 1–2 display `r sprintf("%.1f%%", variance_2pc)` of standardized expression variation; point shapes show diagnoses only for post-selection interpretation.
+
+```{r selected_plot, fig.width=6.2, fig.height=2.1, fig.align="center"}
+ggplot2::ggplot(plot_data, ggplot2::aes(
+  x = PC1, y = PC2, color = Cluster, shape = Type
+)) +
+  ggplot2::geom_point(size = 2.5, alpha = 0.85) +
+  ggplot2::scale_color_brewer(palette = "Dark2") +
+  ggplot2::labs(
+    x = "PC1", y = "PC2", color = "Selected cluster", shape = "Known type",
+    caption = "PCA map of the selected clusters; its top silhouette and stronger stability support the choice."
+  ) +
+  ggplot2::theme_minimal(base_size = 9) +
+  ggplot2::theme(legend.position = "bottom",
+                 plot.caption = ggplot2::element_text(size = 7))
+```
+
+Cluster composition, examined only after selection:
+
+```{r selected_composition}
+knitr::kable(cluster_table, col.names = c("Cluster", "Samples", "ALL", "AML"))
+```
+
+The groups show `r sum(class_counts[, "ALL"] > 0 & class_counts[, "AML"] > 0)` cluster(s) containing both leukemia types. Silhouette and stability are internal heuristics, not evidence that clusters are biologically real; results may change with the small sample, selected PCA dimension, and similarity graph. K-means and Ward were also compared, but their clustering results are not shown.
