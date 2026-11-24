@@ -13,9 +13,10 @@ format:
     toc-depth: 2
     code-fold: true
     code-summary: "Show the workflow"
-  execute:
-    warning: false
-    message: false
+
+execute:
+  warning: false
+  message: false
 ---
 
 Links:
@@ -35,40 +36,9 @@ Katherine Yang (NetID: kyang53, GitHub: katherinesophieyang)
 ## Data preparation and exploration
 
 ```{r}
+# Data prepration
+library(knitr)
 df <- read.csv("data/ObesityDataSet_raw_and_data_sinthetic.csv")
-
-# boxplots
-par(mfrow = c(1, 3))
-boxplot(df$Age,
-        main = "Age Distribution",
-        ylab = "Age")
-
-boxplot(df$Height,
-        main = "Height Distribution",
-        ylab = "Height")
-
-boxplot(df$Weight,
-        main = "Weight Distribution",
-        ylab = "Weight")
-```
-
-## Unsupervised Learning
-
-### Hierarchical Clustering
-
-```{r}
-#X <- df[, -ncol(df)]
-#N <- nrow(df)
-
-#hcfit <- hclust(dist(X), method = "complete")
-```
-
-### Spectral Clustering
-
-```{r}
-library(SpectralClMixed)
-library(cluster)
-set.seed(42301)
 
 # Transform categorical predictors into factors (including response)
 # We won't need the response here, but it'll be useful in supervised learning
@@ -76,14 +46,155 @@ cat_cols <- c("Gender", "family_history_with_overweight", "FAVC", "CAEC",
               "SMOKE", "SCC", "CALC", "MTRANS", "NObeyesdad")
 df[cat_cols] <- lapply(df[cat_cols], factor)
 
-# Make CAEC and CALC ordered
+# Make CAEC, CALC, and NObeyesdad ordered
 df$CAEC <- ordered(df$CAEC, 
                    levels = c("no", "Sometimes", "Frequently", "Always")
                    )
 df$CALC <- ordered(df$CALC, 
                    levels = c("no", "Sometimes", "Frequently", "Always")
                    )
+df$NObeyesdad <- ordered(
+  df$NObeyesdad,
+  levels = c("Insufficient_Weight", "Normal_Weight", 
+             "Overweight_Level_I", "Overweight_Level_II", 
+             "Obesity_Type_I", "Obesity_Type_II","Obesity_Type_III")
+  )
+
 X <- df[, -ncol(df)] # removes last column of df (response)
+
+# Exploration
+# boxplots of numerical variables
+par(mfrow = c(1, 3))
+boxplot(df$Age,
+        main = "Age Distribution",
+        ylab = "Age",
+        col = "deepskyblue")
+
+boxplot(df$Height,
+        main = "Height Distribution",
+        ylab = "Height",
+        col = "darkorange")
+
+boxplot(df$Weight,
+        main = "Weight Distribution",
+        ylab = "Weight",
+        col = "indianred1")
+
+# Obesity level distribution
+par(mfrow = c(1, 1), mar = c(5, 9, 4, 2))
+obesity_counts <- table(df$NObeyesdad)
+barplot(obesity_counts,
+        horiz = TRUE,
+        las = 1,
+        main = "Obesity Level Distribution",
+        xlab = "Count",
+        ylab = "",
+        col = hcl.colors(length(obesity_counts), palette = "Pastel 1")
+        )
+
+# Age vs. Obesity Level
+par(mfrow = c(1, 1))
+boxplot(Age ~ NObeyesdad, data = df, 
+        horizontal = TRUE,
+        las = 1,
+        main = "Age by Obesity Level",
+        xlab = "Age",
+        ylab = "",
+        col = hcl.colors(length(obesity_counts), palette = "Pastel 1")
+)
+
+# Height vs. Obesity Level
+par(mfrow = c(1, 1))
+boxplot(Height ~ NObeyesdad, data = df, 
+        horizontal = TRUE,
+        las = 1,
+        main = "Height by Obesity Level",
+        xlab = "Height",
+        ylab = "",
+        col = hcl.colors(length(obesity_counts), palette = "Pastel 1")
+)
+
+# Weight vs. Obesity Level
+par(mfrow = c(1, 1))
+boxplot(Weight ~ NObeyesdad, data = df, 
+        horizontal = TRUE,
+        las = 1,
+        main = "Weight by Obesity Level",
+        xlab = "Weight",
+        ylab = "",
+        col = hcl.colors(length(obesity_counts), palette = "Pastel 1")
+        )
+```
+
+## Unsupervised Learning
+
+### Hierarchical Clustering
+
+```{r}
+library(cluster)
+gower_distance <- daisy(X, metric = "gower")
+
+h_cluster <- hclust(gower_distance, method = "complete")
+h_cluster2 <- hclust(gower_distance, method = "single")
+h_cluster3 <- hclust(gower_distance, method = "average")
+
+# Complete linkage
+plot(h_cluster, labels = FALSE,
+     main = "Complete Hierarchical Clustering of Obesity Data",
+     xlab = "Individuals",
+     ylab = "Gower Distance")
+
+# Single linkage
+plot(h_cluster2, labels = FALSE,
+     main = "Single Hierarchical Clustering of Obesity Data",
+     xlab = "Individuals",
+     ylab = "Gower Distance")
+
+# Average linkage
+plot(h_cluster3, labels = FALSE,
+     main = "Average Hierarchical Clustering of Obesity Data",
+     xlab = "Individuals",
+     ylab = "Gower Distance")
+
+# Compare numbers of clusters
+cluster2 <- cutree(h_cluster3, k = 2)
+cluster3 <- cutree(h_cluster3, k = 3)
+cluster4 <- cutree(h_cluster3, k = 4)
+cluster5 <- cutree(h_cluster3, k = 5)
+cluster10 <- cutree(h_cluster3, k = 10)
+cluster15 <- cutree(h_cluster3, k = 15)
+cluster20 <- cutree(h_cluster3, k = 20)
+
+table(cluster2)
+table(cluster3)
+table(cluster4)
+table(cluster5)
+table(cluster10)
+table(cluster15)
+table(cluster20)
+
+# Find lengths
+length3 <- silhouette(cluster3, gower_distance)
+length4 <- silhouette(cluster4, gower_distance)
+length5 <- silhouette(cluster5, gower_distance)
+
+# Compare averages of silouhette widths
+avg_sil3 <- mean(length3[,3])
+avg_sil4 <- mean(length4[,3])
+avg_sil5 <- mean(length5[,3])
+
+# Results for k = 3, 4, and 5
+data.frame(
+  k = c(3, 4, 5),
+  avg_silhouette = c(avg_sil3, avg_sil4, avg_sil4)
+)
+```
+
+### Spectral Clustering
+
+```{r}
+library(SpectralClMixed)
+set.seed(42301)
 
 # Find the best number of cluster (k)
 k_vals <- seq(from = 2, to = 10, by = 1)
@@ -104,7 +215,7 @@ for (i in seq_along(k_vals)){
   spectral.fits[[i]] <- mspec(X, k = k, starts = 10, its = 100)
   
   cluster_sizes <- table(spectral.fits[[i]]$cluster)
-  silhouette_value <- silhouette(spectral.fits[[i]]$cluster, gower_dist)
+  silhouette_value <- silhouette(spectral.fits[[i]]$cluster, gower_distance)
   
   comparison$avg_silhouette[i] <- mean(silhouette_value[, "sil_width"])
   comparison$smallest_cluster[i] <- min(cluster_sizes)
