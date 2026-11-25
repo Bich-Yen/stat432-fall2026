@@ -156,7 +156,7 @@ plot(h_cluster3, labels = FALSE,
      xlab = "Individuals",
      ylab = "Gower Distance")
 
-# Compare numbers of clusters
+# Compare numbers of clusters from average linkage
 cluster2 <- cutree(h_cluster3, k = 2)
 cluster3 <- cutree(h_cluster3, k = 3)
 cluster4 <- cutree(h_cluster3, k = 4)
@@ -255,6 +255,45 @@ plot(spectral.fit_k10, cols = 1:10)
 ## Supervised Learning
 
 ### KNN
+
+```{r}
+library(kknn)
+library(caret)
+set.seed(43201)
+
+# Change NObeyesdad to an unordered factor b/c we only care about classifying exact labels
+df$NObeyesdad <- factor(
+  df$NObeyesdad, 
+  levels = levels(df$NObeyesdad), 
+  ordered = FALSE
+  )
+
+# Tune parameter k (number of clusters)
+# train.kknn() does NOT use Gower's distance and uses leave-one-out CV
+# Euclidean distance
+knn.fit_euclidean <- train.kknn(
+  NObeyesdad ~ ., 
+  data = df,
+  ks = seq(from = 1, to = 20, by = 1),
+  distance = 2, # Euclidean distance
+  kernel = c("rectangular", "triangular", "epanechnikov", 
+             "biweight", "triweight", "gaussian", "optimal"),
+  scale = TRUE)
+
+summary(knn.fit_euclidean)
+
+# Manhattan distance
+knn.fit_manhattan <- train.kknn(
+  NObeyesdad ~ ., 
+  data = df,
+  ks = seq(from = 1, to = 20, by = 1),
+  distance = 1, # Manhattan distance
+  kernel = c("rectangular", "triangular", "epanechnikov", 
+             "biweight", "triweight", "gaussian", "optimal"),
+  scale = TRUE)
+
+summary(knn.fit_manhattan)
+```
 
 ### Random Forest
 
