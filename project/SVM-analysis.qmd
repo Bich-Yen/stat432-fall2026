@@ -1,0 +1,237 @@
+---
+title: "SVM Classification of Obesity Levels"
+pagetitle: "SVM Analysis"
+format:
+  html:
+    embed-resources: true
+    toc: false
+    code-fold: true
+    code-summary: "Show analysis code"
+execute:
+  warning: false
+  message: false
+---
+
+<style>
+@page { size: letter; margin: 0.18in; }
+body { font-size: 11pt; line-height: 1.05; }
+h1 { font-size: 16pt; margin: 0 0 0.15em; }
+h2 { font-size: 11pt; margin: 0.35em 0 0.1em; }
+p { margin: 0.15em 0; }
+table { font-size: 8pt; margin: 0.15em 0; }
+th, td { padding: 1px 4px !important; }
+figure { margin: 0.1em 0; }
+@media print {
+  .cell, figure, table { break-inside: avoid; }
+  pre, code { display: none; }
+  details { display: none !important; }
+  body { font-size: 11pt; line-height: 1.0; }
+  table { font-size: 7.25pt; line-height: 0.95; }
+  th, td { padding: 0 3px !important; }
+  h2 { margin-top: 0.2em; }
+  p { margin: 0.1em 0; }
+}
+</style>
+
+## Goal and data
+
+We classify the seven-level `NObeyesdad` outcome from the other 16 predictors in the [UCI obesity dataset](https://doi.org/10.24432/C5H31Z). The 2,111 records have no missing values; class counts range from 272 to 351. Nominal predictors are dummy-coded; ordered `CAEC` and `CALC` use ordered-factor contrasts. A linear kernel tests a straight boundary in the encoded predictors; polynomial and radial kernels allow nonlinear boundaries. UCI reports that 77% of records were synthetically generated, so strong performance may not generalize to independently collected populations.
+
+## Tuning and selection
+
+With seed 43201, reserve a stratified 20% test set, used only once after model selection. Compare 15 settings with the same stratified five folds on the remaining data: linear, polynomial (degrees 2 and 3), and radial kernels. Tune cost `C`, which penalizes margin violations; for radial kernels also tune `gamma`, which controls boundary locality. Polynomial `gamma = 1/p` and `coef0 = 1`, where `p` is the encoded predictor count. Within each fold, center and scale encoded predictors using that fold's training data only. Select the setting with the lowest mean cross-validation misclassification rate and compare it with a majority-class baseline.
+
+```{r}
+#| fig-width: 7.5
+#| fig-height: 3.6
+#| fig-dpi: 130
+library(e1071)
+library(ggplot2)
+library(knitr)
+
+data_file <- if (file.exists(file.path("data", "ObesityDataSet_raw_and_data_sinthetic.csv"))) {
+  file.path("data", "ObesityDataSet_raw_and_data_sinthetic.csv")
+} else {
+  file.path("project", "data", "ObesityDataSet_raw_and_data_sinthetic.csv")
+}
+df <- read.csv(data_file, stringsAsFactors = FALSE)
+
+class_levels <- c(
+  "Insufficient_Weight", "Normal_Weight", "Overweight_Level_I",
+  "Overweight_Level_II", "Obesity_Type_I", "Obesity_Type_II",
+  "Obesity_Type_III"
+)
+df$NObeyesdad <- factor(df$NObeyesdad, levels = class_levels)
+stopifnot(!anyNA(df))
+
+nominal <- c(
+  "Gender", "family_history_with_overweight", "FAVC",
+  "SMOKE", "SCC", "MTRANS"
+)
+df[nominal] <- lapply(df[nominal], factor)
+df$CAEC <- ordered(df$CAEC, levels = c("no", "Sometimes", "Frequently", "Always"))
+df$CALC <- ordered(df$CALC, levels = c("no", "Sometimes", "Frequently", "Always"))
+
+y <- df$NObeyesdad
+predictor_data <- df[, setdiff(names(df), "NObeyesdad"), drop = FALSE]
+X <- model.matrix(~ ., data = predictor_data)[, -1, drop = FALSE]
+p <- ncol(X)
+
+set.seed(43201)
+test_index <- unlist(lapply(class_levels, function(cl) {
+  rows <- which(y == cl)
+  sample(rows, size = floor(0.2 * length(rows)))
+}), use.names = FALSE)
+train_index <- setdiff(seq_along(y), test_index)
+
+fold_id <- integer(length(train_index))
+y_train <- y[train_index]
+for (cl in class_levels) {
+  rows <- which(y_train == cl)
+  fold_id[rows] <- sample(rep(seq_len(5), length.out = length(rows)))
+}
+
+grid <- rbind(
+  data.frame(kernel = "linear", degree = NA_integer_,
+             cost = c(0.1, 1, 10), gamma = NA_real_),
+  expand.grid(kernel = "polynomial", degree = 2:3,
+              cost = c(0.1, 1, 10), gamma = NA_real_),
+  expand.grid(kernel = "radial", degree = NA_integer_,
+              cost = c(0.1, 1, 10), gamma = c(0.5 / p, 1 / p))
+)
+grid$cv_error <- NA_real_
+fold_errors <- matrix(NA_real_, nrow = 5, ncol = nrow(grid))
+fold_baseline_errors <- numeric(5)
+
+standardize_from <- function(train, other) {
+  center <- colMeans(train)
+  spread <- apply(train, 2, sd)
+  spread[!is.finite(spread) | spread == 0] <- 1
+  list(
+    train = sweep(sweep(train, 2, center, "-"), 2, spread, "/"),
+    other = sweep(sweep(other, 2, center, "-"), 2, spread, "/")
+  )
+}
+
+fit_candidate <- function(x, response, setting) {
+  args <- list(
+    x = x, y = droplevels(response),
+    kernel = as.character(setting$kernel),
+    cost = setting$cost, scale = FALSE
+  )
+  if (setting$kernel == "polynomial") {
+    args$degree <- setting$degree
+    args$gamma <- 1 / p
+    args$coef0 <- 1
+  }
+  if (setting$kernel == "radial") args$gamma <- setting$gamma
+  do.call(e1071::svm, args)
+}
+
+for (fold in seq_len(5)) {
+  fold_train <- train_index[fold_id != fold]
+  fold_valid <- train_index[fold_id == fold]
+  majority_class <- names(which.max(table(y[fold_train])))
+  fold_baseline_errors[fold] <- mean(y[fold_valid] != majority_class)
+  transformed <- standardize_from(X[fold_train, , drop = FALSE],
+                                  X[fold_valid, , drop = FALSE])
+
+  for (j in seq_len(nrow(grid))) {
+    fit <- fit_candidate(transformed$train, y[fold_train], grid[j, ])
+    pred <- predict(fit, transformed$other)
+    fold_errors[fold, j] <- mean(pred != y[fold_valid])
+  }
+}
+
+grid$cv_error <- colMeans(fold_errors)
+baseline_cv_error <- mean(fold_baseline_errors)
+grid$selected <- ""
+best_index <- which.min(grid$cv_error)
+grid$selected[best_index] <- "Yes"
+
+candidate_label <- function(row) {
+  kernel <- switch(as.character(row$kernel),
+    linear = "Linear",
+    polynomial = paste0("Poly-", row$degree),
+    radial = paste0("RBF \u03b3=", signif(row$gamma, 2))
+  )
+  paste0(kernel, ", C=", row$cost)
+}
+grid$candidate <- vapply(seq_len(nrow(grid)), function(i) {
+  candidate_label(grid[i, ])
+}, character(1))
+
+plot_data <- grid
+plot_data$candidate <- factor(
+  plot_data$candidate,
+  levels = plot_data$candidate[order(plot_data$cv_error, decreasing = TRUE)]
+)
+ggplot(plot_data, aes(x = candidate, y = cv_error, color = kernel)) +
+  geom_point(size = 2) +
+  geom_point(
+    data = plot_data[best_index, , drop = FALSE],
+    shape = 8, size = 4, color = "firebrick"
+  ) +
+  coord_flip() +
+  scale_y_continuous(labels = scales::label_percent(accuracy = 1)) +
+  labs(
+    x = NULL, y = "Mean 5-fold CV misclassification",
+    color = "Kernel",
+    caption = "The red star marks the lowest-error setting selected for final testing."
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    legend.position = "bottom",
+    plot.caption = element_text(hjust = 0, size = 8),
+    axis.text.y = element_text(size = 8.5),
+    axis.text.x = element_text(size = 8.5)
+  )
+```
+
+```{r}
+report_grid <- data.frame(
+  Model = grid$candidate,
+  `CV error` = sprintf("%.3f", grid$cv_error),
+  Selected = grid$selected,
+  check.names = FALSE
+)
+kable(report_grid, align = c("l", "r", "c"))
+```
+
+**Selected setting:** `r grid$candidate[best_index]` (mean CV error `r sprintf("%.3f", grid$cv_error[best_index])`).
+The majority-class baseline has mean CV error `r sprintf("%.3f", baseline_cv_error)`.
+
+## Held-out evaluation
+
+Refit the selected setting on the complete training set, then evaluate once on the reserved test set. The table reports one-vs-rest counts for each class; because this is a seven-class task, TN/FP/FN/TP are class-specific.
+
+```{r}
+final_transform <- standardize_from(
+  X[train_index, , drop = FALSE],
+  X[test_index, , drop = FALSE]
+)
+final_fit <- fit_candidate(final_transform$train, y[train_index],
+                           grid[best_index, ])
+test_pred <- factor(
+  predict(final_fit, final_transform$other),
+  levels = class_levels
+)
+test_truth <- factor(y[test_index], levels = class_levels)
+test_majority_class <- names(which.max(table(y[train_index])))
+baseline_test_accuracy <- mean(test_truth == test_majority_class)
+confusion <- table(Actual = test_truth, Predicted = test_pred)
+
+tp <- diag(confusion)
+fn <- rowSums(confusion) - tp
+fp <- colSums(confusion) - tp
+tn <- sum(confusion) - tp - fn - fp
+ovr <- data.frame(Class = class_levels, TN = tn, FP = fp, FN = fn, TP = tp)
+rownames(ovr) <- NULL
+
+test_accuracy <- mean(test_pred == test_truth)
+macro_recall <- mean(tp / (tp + fn))
+
+kable(ovr, row.names = FALSE, align = c("l", "r", "r", "r", "r"))
+```
+
+The selected model's held-out accuracy is **`r sprintf("%.3f", test_accuracy)`** (`r sum(test_pred != test_truth)` errors among `r length(test_truth)` cases), versus **`r sprintf("%.3f", baseline_test_accuracy)`** for the majority-class baseline; macro-averaged sensitivity is **`r sprintf("%.3f", macro_recall)`**. The one-vs-rest counts show which categories are confused. These results estimate performance on one stratified split, not independently collected populations; the dataset is predominantly synthetic, and weight/height are closely associated with obesity class.
