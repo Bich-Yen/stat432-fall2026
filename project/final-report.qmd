@@ -192,8 +192,11 @@ data.frame(
 
 ### Spectral Clustering
 
+For a dataset that consists of continuous and categorical predictors, Gower distance was used for spectral clustering. Gower distance measures how similar two observations are when there is a mixed dataset (Source: <https://crispinagar.github.io/blogs/gower-distance.html>).
+
 ```{r}
 library(SpectralClMixed)
+library(GGally)
 set.seed(42301)
 
 # Find the best number of cluster (k)
@@ -205,8 +208,12 @@ spectral.fits <- vector("list", length(k_vals))
 comparison <- data.frame(
   k = k_vals,
   avg_silhouette = NA_real_,
+  category_wt = NA_real_,
+  bt_wt_ss = NA_real_,
   smallest_cluster = NA_integer_
 )
+cluster_cols <- paste("Cluster", seq_len(max(k_vals)))
+comparison[cluster_cols] <- 0L
 
 for (i in seq_along(k_vals)){
   k <- k_vals[i]
@@ -214,50 +221,149 @@ for (i in seq_along(k_vals)){
   # Perform spectral clustering on mixed dataset (categorical + numeric)
   spectral.fits[[i]] <- mspec(X, k = k, starts = 10, its = 100)
   
-  cluster_sizes <- table(spectral.fits[[i]]$cluster)
+  cluster_sizes <- table(factor(spectral.fits[[i]]$cluster, levels = seq_len(k)))
   silhouette_value <- silhouette(spectral.fits[[i]]$cluster, gower_distance)
   
   comparison$avg_silhouette[i] <- mean(silhouette_value[, "sil_width"])
+  comparison$category_wt[i] <- as.numeric(spectral.fits[[i]]$"cat_wt")
+  comparison$bt_wt_ss[i] <- as.numeric(spectral.fits[[i]]$"bt/wt_ss")
   comparison$smallest_cluster[i] <- min(cluster_sizes)
+  comparison[i, paste0("Cluster ", seq_len(k))] <- as.integer(cluster_sizes)
 }
 
 comparison
 
-# Plot spectral.fits
-#cols <- 1:16
-#parallel_data <- X[, cols, drop = FALSE]
+# Parallel-coordinate plot for k = 2
+cols <- 1:16
+parallel_data <- X[, cols, drop = FALSE] # copies columns from X
 
 # Convert factors to numeric codes for plotting only
-#parallel_data[] <- lapply(parallel_data, function(x){
-  #if (is.factor(x))
-#})
+parallel_data[] <- lapply(parallel_data, function(x){
+  if (is.factor(x)) as.numeric(x) else x
+})
+
 spectral.fit_k2 <- spectral.fits[[which(k_vals == 2)]]
-plot(spectral.fit_k2, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k2$cluster) # adds fitted cluster assignment for each observation
 
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), # use predictor columns
+  groupColumn = "Cluster", # colors obsrvations by cluster
+  scale = "uniminmax", # rescales each predictor to same 0-1 plotting range
+  alphaLines = 0.15, # makes lines transparent to reduce overplotting
+  title = "Parallel-Coordinate Plot for k = 2"
+)
+
+# Parallel-coordinate plot for k = 3
 spectral.fit_k3 <- spectral.fits[[which(k_vals == 3)]]
-plot(spectral.fit_k3, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k3$cluster)
 
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), 
+  groupColumn = "Cluster", 
+  scale = "uniminmax", 
+  alphaLines = 0.15,
+  title = "Parallel-Coordinate Plot for k = 3"
+)
+
+# Parallel-coordinate plot for k = 4
 spectral.fit_k4 <- spectral.fits[[which(k_vals == 4)]]
-plot(spectral.fit_k4, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k4$cluster)
 
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), 
+  groupColumn = "Cluster", 
+  scale = "uniminmax", 
+  alphaLines = 0.15,
+  title = "Parallel-Coordinate Plot for k = 4"
+)
+
+# Parallel-coordinate plot for k = 5
 spectral.fit_k5 <- spectral.fits[[which(k_vals == 5)]]
-plot(spectral.fit_k5, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k5$cluster)
 
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), 
+  groupColumn = "Cluster", 
+  scale = "uniminmax", 
+  alphaLines = 0.15,
+  title = "Parallel-Coordinate Plot for k = 5"
+)
+
+# Parallel-coordinate plot for k = 6
 spectral.fit_k6 <- spectral.fits[[which(k_vals == 6)]]
-plot(spectral.fit_k6, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k6$cluster)
 
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), 
+  groupColumn = "Cluster", 
+  scale = "uniminmax", 
+  alphaLines = 0.15,
+  title = "Parallel-Coordinate Plot for k = 6"
+)
+
+# Parallel-coordinate plot for k = 7
 spectral.fit_k7 <- spectral.fits[[which(k_vals == 7)]]
-plot(spectral.fit_k7, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k7$cluster)
 
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), 
+  groupColumn = "Cluster", 
+  scale = "uniminmax", 
+  alphaLines = 0.15,
+  title = "Parallel-Coordinate Plot for k = 7"
+)
+
+# Parallel-coordinate plot for k = 8
 spectral.fit_k8 <- spectral.fits[[which(k_vals == 8)]]
-plot(spectral.fit_k8, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k8$cluster)
 
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), 
+  groupColumn = "Cluster", 
+  scale = "uniminmax", 
+  alphaLines = 0.15,
+  title = "Parallel-Coordinate Plot for k = 8"
+)
+
+# Parallel-coordinate plot for k = 9
 spectral.fit_k9 <- spectral.fits[[which(k_vals == 9)]]
-plot(spectral.fit_k9, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k9$cluster)
 
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), 
+  groupColumn = "Cluster", 
+  scale = "uniminmax", 
+  alphaLines = 0.15,
+  title = "Parallel-Coordinate Plot for k = 9"
+)
+
+# Parallel-coordinate plot for k = 10
 spectral.fit_k10 <- spectral.fits[[which(k_vals == 10)]]
-plot(spectral.fit_k10, cols = 1:10)
+parallel_data$Cluster <- factor(spectral.fit_k10$cluster)
+
+ggparcoord(
+  data = parallel_data,
+  columns = seq_along(cols), 
+  groupColumn = "Cluster", 
+  scale = "uniminmax", 
+  alphaLines = 0.15,
+  title = "Parallel-Coordinate Plot for k = 10"
+)
 ```
+
+When increasing `k`, it is difficult to tell if there are distinguished clusters because the lines overlap a lot in the parallel-coordinate plots. $k = 2$ has the highest average silhouette of about 0.077. An average silhouette score near 0 indicates that the observations are close to the boundaries of their cluster and another cluster or that clusters are overlapping, which can be observed from the parallel-coordinate plots (Source: <https://machinelearningmastery.com/k-means-cluster-evaluation-with-silhouette-analysis/>). From $k = 3$ to $k = 10$, the average silhouette values are either negative or close to 0. Negative average silhouette scores suggest that the observations are closer to another cluster than their assigned cluster, on average.
+
+As $k$ increases, the bt_wt_ss value (ratio of between-cluster sum of squares to within-cluster sum of squares) decreases. $k = 2$ has the highest bt_wt_ss value, which would indicate that the clusters are farther apart from one another compared to the observations within their assigned cluster. However, the very low average silhouette score means there is weak separation.
+
+Overall, $k = 2$ may seem like the best number of clusters, but the evidence is weak. None of the $k$ values had strong evidence of separated clusters.
 
 ## Supervised Learning
 
@@ -275,12 +381,29 @@ df$NObeyesdad <- factor(
   ordered = FALSE
   )
 
+# Perform a 80/20 data split
+train_rows <- createDataPartition(y = df$NObeyesdad, p = 0.80, list = FALSE)
+train_data <- df[train_rows, ]
+test_data  <- df[-train_rows, ]
+
 # Tune parameter k (number of clusters)
 # train.kknn() does NOT use Gower's distance and uses leave-one-out CV
+# Manhattan distance
+knn.fit_manhattan <- train.kknn(
+  NObeyesdad ~ ., 
+  data = train_data,
+  ks = seq(from = 1, to = 20, by = 1),
+  distance = 1, # Manhattan distance
+  kernel = c("rectangular", "triangular", "epanechnikov", 
+             "biweight", "triweight", "gaussian", "optimal"),
+  scale = TRUE)
+
+summary(knn.fit_manhattan)
+
 # Euclidean distance
 knn.fit_euclidean <- train.kknn(
   NObeyesdad ~ ., 
-  data = df,
+  data = train_data,
   ks = seq(from = 1, to = 20, by = 1),
   distance = 2, # Euclidean distance
   kernel = c("rectangular", "triangular", "epanechnikov", 
@@ -289,18 +412,21 @@ knn.fit_euclidean <- train.kknn(
 
 summary(knn.fit_euclidean)
 
-# Manhattan distance
-knn.fit_manhattan <- train.kknn(
-  NObeyesdad ~ ., 
-  data = df,
-  ks = seq(from = 1, to = 20, by = 1),
-  distance = 1, # Manhattan distance
-  kernel = c("rectangular", "triangular", "epanechnikov", 
-             "biweight", "triweight", "gaussian", "optimal"),
-  scale = TRUE)
+# Choose best model and evaluate it
+knn.fit_best <- knn.fit_manhattan
+test_pred <- predict(knn.fit_best, newdata = test_data)
+test_cm <- confusionMatrix(data = test_pred, reference = test_data$NObeyesdad)
 
-summary(knn.fit_manhattan)
+test_cm
+test_cv <- 1 - test_cm$overall["Accuracy"] # test misclassification rate
+test_cv
 ```
+
+KNN was tested with Manhattan distance and Euclidean distance. The kernel type and $k$ were tuned wit leave-one-out cross-validation. KNN with Manhattan distance has a misclassification rate of 0.106, triangular as its best kernel, and $k = 7$ as its best number of clusters. KNN with Euclidean distance has a misclassification rate of about 0.156, biweight as its best kernel, and $k = 15$ as its best number of clusters. Based on the misclassification rate alone, it appears that the KNN with Manhattan distance is better due to its lower misclassification rate.
+
+KNN with Euclidean distance also has a larger number of clusters. "Larger neighborhoods average more noise, making the fitted function more stable. They also reach farther from the target, which can hide local features of the sine curve. Smaller neighborhoods retain those features but are more sensitive to the noise." (Source: <https://teazrq.github.io/stat432rpy/topics/nearest-neighbors/knn-and-local-averaging.html>).
+
+The best settings for `knn.fit_manhattan` were used on a testing dataset. Its misclassification rate is `r round(test_cv, digits = 4)`. This is a fairly low test error, which suggests that the candidate model can make good predictions.
 
 ### Random Forest
 
