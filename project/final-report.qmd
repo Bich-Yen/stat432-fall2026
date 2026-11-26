@@ -633,3 +633,19 @@ kable(ovr, row.names = FALSE, align = c("l", "r", "r", "r", "r"))
 ```
 
 The selected model's held-out accuracy is **`r sprintf("%.3f", test_accuracy)`** (`r sum(test_pred != test_truth)` errors among `r length(test_truth)` cases), versus **`r sprintf("%.3f", baseline_test_accuracy)`** for the majority-class baseline; macro-averaged sensitivity is **`r sprintf("%.3f", macro_recall)`**. The one-vs-rest counts show which categories are confused. These results estimate performance on one stratified split, not independently collected populations; the dataset is predominantly synthetic, and weight/height are closely associated with obesity class.
+
+## Conclusions
+
+### Findings, limitations, possible improvements
+
+### Team Member Contribution
+
+Bich-Yen Pham: question and background, data preparation and exploration, spectral clustering, KNN, SVM analysis, conclusions
+
+Katherine Yang: question and background, data preparation and exploration, hierarchical clustering, random forest, conclusions
+
+### AI Assistance
+
+An AI agent was implemented to analyze the dataset with SVM by using a skill. In addition, it was used to help troubleshoot errors and format graphs.
+
+## References
